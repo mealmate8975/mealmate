@@ -4,6 +4,7 @@ charset-normalizer==3.4.1
 Django==5.2
 django-cors-headers==4.7.0
 django-phonenumber-field==8.1.0
+djangorestframework==3.16.0
 idna==3.10
 phonenumbers==9.0.4
 pillow==11.2.1
