@@ -34,7 +34,7 @@ INSTALLED_APPS = [
     'accounts',
     'restaurants',
     'friendships',
-    'schedules',
+    'participants',
 ]
 
 MIDDLEWARE = [

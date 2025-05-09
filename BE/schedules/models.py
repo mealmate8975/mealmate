@@ -2,7 +2,7 @@ from django.db import models
 from restaurants.models import restaurant
 from accounts.models import CustomUser
 
-class schedules(models.Model):
+class Schedules(models.Model):
     schedule_id = models.AutoField(primary_key=True)
     rest_id = models.ForeignKey(restaurant,null=True,on_delete=models.DO_NOTHING)
     created_by = models.ForeignKey(CustomUser,on_delete=models.DO_NOTHING)
