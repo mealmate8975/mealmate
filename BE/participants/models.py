@@ -4,7 +4,11 @@ from schedules.models import Schedules
 
 # Create your models here.
 class Participants(models.Model):
-    meal_schedule = models.ForeignKey(Schedules, on_delete=models.CASCADE)
+    meal_schedule = models.ForeignKey(
+        Schedules,
+        on_delete=models.CASCADE,
+        related_name="participants"
+    )
     participants = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete= models.SET_NULL,
