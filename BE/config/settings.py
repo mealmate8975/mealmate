@@ -22,17 +22,18 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'django.contrib.staticfiles',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles',
+    'phonenumber_field',
     'rest_framework',
     'corsheaders',
-    'phonenumber_field',
     'accounts',
     'restaurants',
+    'friendships'
 ]
 
 MIDDLEWARE = [
