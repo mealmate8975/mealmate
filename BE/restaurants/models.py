@@ -1,7 +1,7 @@
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
 
-class restaurant(models.Model):
+class Restaurant(models.Model):
     cuisine_choices = [
     ('KR', '한식'),
     ('CN', '중식'),
