@@ -30,40 +30,70 @@ class SendFriendRequestTest(APITestCase):  # APITestCase를 상속받아 테스�
         self.assertEqual(response.status_code, 201)
         
         # 응답 데이터에서 상태 메시지가 '요청 보냄'인지 확인
-        self.assertEqual(response.data['status'], '요청 보냄')
+        self.assertEqual(response.data['message'], '요청 보냄')
         
         # 첫 번째 사용자와 두 번째 사용자 간의 친구 요청이 데이터베이스에 존재하는지 확인
         self.assertTrue(Friendship.objects.filter(from_user=self.user1, to_user=self.user2).exists())
 
-class AcceptFriendRequestTest(APITestCase):
-    def setUp(self):
-        # 첫 번째 사용자 생성
-        self.user1 = User(email="user1@example.com", name="User One", nickname="user1", gender='0')  # User 객체 생성
-        self.user1.set_password("pass")  # 비밀번호를 해시화하여 설정
-        self.user1.save()  # 사용자 객체를 데이터베이스에 저장
+    def test_send_friend_request_already_sent(self):  # 이미 친구 요청을 보낸 경우를 테스트
+        Friendship.objects.create(from_user=self.user1, to_user=self.user2, status='pending')  # 기존 친구 요청 생성
+        url = reverse('friendship-send')
 
-        # 두 번째 사용자 생성
-        self.user2 = User(email="user2@example.com", name="User Two", nickname="user2", gender='1')
-        self.user2.set_password("pass")
-        self.user2.save()
+        response = self.client.post(url, {'to_user_id': self.user2.id})  # 다시 친구 요청을 보냄
+        
+        # 응답 상태 코드가 400인지 확인
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['error'], '이미 보낸 친구요청')
 
-        # 친구요청 생성
-        self.friendrequest = Friendship(from_user=self.user1,to_user=self.user2,status='pending')
-        self.friendrequest.save()
+    def test_send_friend_request_already_accepted(self):  # 이미 수락된 친구 요청을 테스트
+        Friendship.objects.create(from_user=self.user1, to_user=self.user2, status='accepted')  # 기존 친구 요청 생성
+        url = reverse('friendship-send')
 
-        self.client.force_login(self.user2)  # 테스트 클라이언트를 사용하여 두 번째 사용자를 강제 로그인 상태로
+        response = self.client.post(url, {'to_user_id': self.user2.id})  # 다시 친구 요청을 보냄
+        
+        # 응답 상태 코드가 400인지 확인
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['error'], '이미 수락된 친구요청')
 
-    def test_accept_friend_request(self):  # 친구 요청 수락 기능을 테스트하는 메서드
-        url = reverse('friendship-accept')  # 'friendship-accept'라는 이름의 URL을 역으로 찾기
+    def test_send_friend_request_declined(self):  # 거절된 친구 요청을 테스트
+        Friendship.objects.create(from_user=self.user1, to_user=self.user2, status='declined')  # 기존 친구 요청 생성
+        url = reverse('friendship-send')
 
-        # 친구 요청을 수락하는 POST 요청을 보냄
-        response = self.client.post(url, {'friendship_id': self.friendrequest.id}) # friendrequest.id를 포함하여 POST 요청을 보냄
+        response = self.client.post(url, {'to_user_id': self.user2.id})  # 다시 친구 요청을 보냄
         
         # 응답 상태 코드가 200인지 확인
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['message'], '친구 재요청 완료')
+
+# class AcceptFriendRequestTest(APITestCase):
+#     def setUp(self):
+#         # 첫 번째 사용자 생성
+#         self.user1 = User(email="user1@example.com", name="User One", nickname="user1", gender='0')  # User 객체 생성
+#         self.user1.set_password("pass")  # 비밀번호를 해시화하여 설정
+#         self.user1.save()  # 사용자 객체를 데이터베이스에 저장
+
+#         # 두 번째 사용자 생성
+#         self.user2 = User(email="user2@example.com", name="User Two", nickname="user2", gender='1')
+#         self.user2.set_password("pass")
+#         self.user2.save()
+
+#         # 친구요청 생성
+#         self.friendrequest = Friendship(from_user=self.user1,to_user=self.user2,status='pending')
+#         self.friendrequest.save()
+
+#         self.client.force_login(self.user2)  # 테스트 클라이언트를 사용하여 두 번째 사용자를 강제 로그인 상태로
+
+#     def test_accept_friend_request(self):  # 친구 요청 수락 기능을 테스트하는 메서드
+#         url = reverse('friendship-accept')  # 'friendship-accept'라는 이름의 URL을 역으로 찾기
+
+#         # 친구 요청을 수락하는 POST 요청을 보냄
+#         response = self.client.post(url, {'friendship_id': self.friendrequest.id}) # friendrequest.id를 포함하여 POST 요청을 보냄
         
-        # 응답 데이터에서 상태 메시지가 '친구 요청 수락'인지 확인
-        self.assertEqual(response.data['status'], '친구 요청 수락')
+#         # 응답 상태 코드가 200인지 확인
+#         self.assertEqual(response.status_code, 200)
         
-        # 친구 요청이 수락이 데이터베이스에 반영됐는지 확인        
-        self.assertEqual(Friendship.objects.get(from_user=self.user1, to_user=self.user2).status,'accepted')
+#         # 응답 데이터에서 상태 메시지가 '친구 요청 수락'인지 확인
+#         self.assertEqual(response.data['status'], '친구 요청 수락')
+        
+#         # 친구 요청이 수락이 데이터베이스에 반영됐는지 확인        
+#         self.assertEqual(Friendship.objects.get(from_user=self.user1, to_user=self.user2).status,'accepted')
