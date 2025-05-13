@@ -36,14 +36,17 @@ class SendFriendRequestView(APIView):
                 backward_target = backward.first()
                 if backward_target.status == 'pending': # 기존 역방향 친구요청이 'pending'일 경우
                     backward_target.status = 'accepted' # 양방향 친구 요청 -> 친구관계 성립으로
+                    # 친구요청 버튼 비활성화, 친구요청수락 버튼 활성화
                     # 단, 친구 요청 철회 기능이 존재할 필요가 있음
                     backward_target.save()
+                    return Response({'message': '상호 요청으로 친구가 되었습니다.'}, status=200)
                 elif backward_target.status == 'accepted':
                     return Response({'error': '이미 친구관계'},status=400) # 400(Bad Request)
                 elif backward_target.status == 'declined': # 기존에 내가 거절한 역방향의 친구요청의 경우
                     # from_user와 to_user의 값을 바꾸고 status를 pending으로 전환
                     backward_target.from_user = request.user
                     backward_target.to_user = to_user
+                    backward_target.status = 'pending'
                     backward_target.save()
                     return Response({'message': '친구 요청 완료'}, status=200)  
         else: # 기존 친구 요청 레코드가 없어 새로 생성
