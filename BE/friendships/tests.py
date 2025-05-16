@@ -19,12 +19,16 @@ class SendFriendRequestTest(APITestCase):  # APITestCase를 상속받아 테스�
 
         # 첫 번째 사용자로 로그인
         self.client.force_login(self.user1)  # 테스트 클라이언트를 사용하여 첫 번째 사용자를 강제 로그인 상태로
+
+    def send_request(self, to_user):
+        url = reverse('friendship-send')
+        return self.client.post(url, {'to_user_id': to_user.id})
+
+    def create_friendship(self, from_user, to_user, status):
+        return Friendship.objects.create(from_user=from_user, to_user=to_user, status=status)
     
     def test_send_friend_request(self):  # 친구 요청을 보내는 기능을 테스트하는 메서드
-        url = reverse('friendship-send')  # 'friendship-send'라는 이름의 URL을 역으로 찾기
-
-        # 친구 요청을 보내는 POST 요청을 보냄 # 두 번째 사용자 ID를 포함하여 POST 요청을 보냄
-        response = self.client.post(url, {'to_user_id': self.user2.id})  
+        response = self.send_request(self.user2)
         
         # 응답 상태 코드가 201인지 확인
         self.assertEqual(response.status_code, 201)
@@ -36,30 +40,24 @@ class SendFriendRequestTest(APITestCase):  # APITestCase를 상속받아 테스�
         self.assertTrue(Friendship.objects.filter(from_user=self.user1, to_user=self.user2).exists())
 
     def test_send_friend_request_already_sent(self):  # 이미 친구 요청을 보낸 경우를 테스트
-        Friendship.objects.create(from_user=self.user1, to_user=self.user2, status='pending')
-        url = reverse('friendship-send')
-
-        response = self.client.post(url, {'to_user_id': self.user2.id})  # 다시 친구 요청을 보냄
+        self.create_friendship(self.user1, self.user2, 'pending')
+        response = self.send_request(self.user2)  # 다시 친구 요청을 보냄
         
         # 응답 상태 코드가 400인지 확인
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['error'], '이미 보낸 친구요청')
 
     def test_send_friend_request_already_accepted(self):  # 이미 수락된 친구 요청을 테스트
-        Friendship.objects.create(from_user=self.user1, to_user=self.user2, status='accepted')  
-        url = reverse('friendship-send')
-
-        response = self.client.post(url, {'to_user_id': self.user2.id})  # 다시 친구 요청을 보냄
+        self.create_friendship(self.user1, self.user2, 'accepted')  
+        response = self.send_request(self.user2)  # 다시 친구 요청을 보냄
         
         # 응답 상태 코드가 400인지 확인
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['error'], '이미 수락된 친구요청')
 
     def test_send_friend_request_declined(self):  # 거절된 친구 요청을 테스트
-        Friendship.objects.create(from_user=self.user1, to_user=self.user2, status='declined')  # 기존 친구 요청 생성
-        url = reverse('friendship-send')
-
-        response = self.client.post(url, {'to_user_id': self.user2.id})  # 다시 친구 요청을 보냄
+        self.create_friendship(self.user1, self.user2, 'declined')  # 기존 친구 요청 생성
+        response = self.send_request(self.user2)  # 다시 친구 요청을 보냄
         
         # 응답 상태 코드가 200인지 확인
         self.assertEqual(response.status_code, 200)
@@ -67,10 +65,9 @@ class SendFriendRequestTest(APITestCase):  # APITestCase를 상속받아 테스�
 
     def test_send_friend_request_reverse_pending(self):
         # 역방향으로 pending 요청이 있는 경우
-        Friendship.objects.create(from_user=self.user2, to_user=self.user1, status='pending')
-        url = reverse('friendship-send')
+        self.create_friendship(self.user2, self.user1, 'pending')
         
-        response = self.client.post(url, {'to_user_id': self.user2.id})
+        response = self.send_request(self.user2)
         
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['message'], '상호 요청으로 친구가 되었습니다.')  # accepted로 바뀐 경우임에도 메시지는 수정 가능
@@ -78,20 +75,18 @@ class SendFriendRequestTest(APITestCase):  # APITestCase를 상속받아 테스�
 
     def test_send_friend_request_reverse_accepted(self):
         # 역방향으로 accepted 친구관계가 이미 있는 경우
-        Friendship.objects.create(from_user=self.user2, to_user=self.user1, status='accepted')
-        url = reverse('friendship-send')
+        self.create_friendship(self.user2, self.user1, 'accepted')
         
-        response = self.client.post(url, {'to_user_id': self.user2.id})
+        response = self.send_request(self.user2)
         
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['error'], '이미 친구관계')
 
     def test_send_friend_request_reverse_declined(self):
         # 역방향으로 declined 요청이 있었던 경우
-        Friendship.objects.create(from_user=self.user2, to_user=self.user1, status='declined')
-        url = reverse('friendship-send')
+        self.create_friendship(self.user2, self.user1, 'declined')
         
-        response = self.client.post(url, {'to_user_id': self.user2.id})
+        response = self.send_request(self.user2)
         
         self.assertEqual(response.status_code, 200)
         friendship = Friendship.objects.get(from_user=self.user1, to_user=self.user2)
