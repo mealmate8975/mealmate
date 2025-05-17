@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404
 
 User = get_user_model()
 
-class FriendshipService:
+class FriendRequestService:
     @staticmethod # 정적 메서드로 선언해서 서비스 객체 없이 호출 가능
     def send_friend_request(from_user, to_user):
         forward = Friendship.objects.filter(from_user=from_user, to_user=to_user)
@@ -19,7 +19,7 @@ class FriendshipService:
                 if forward_target.status == 'pending': # 기존 친구요청이 수락 대기중일 경우
                     return {'error': '이미 보낸 친구요청'}, 400
                 elif forward_target.status == 'accepted':
-                    return {'error': '이미 수락된 친구요청'}, 400
+                    return {'error': '이미 수락된 친구요청'}, 40
                 elif forward_target.status == 'declined': # 기존에 거절된 친구요청의 경우
                     forward_target.status = 'pending' # 재요청
                     forward_target.save()
@@ -56,10 +56,16 @@ class SendFriendRequestView(APIView):
         # FriendshipService 클래스의 정적 메서드를 호출하여 친구 요청 처리 로직 실행
         # request.user: 현재 로그인한 사용자 (친구 요청을 보내는 사람)
         # to_user: 요청을 받을 대상 사용자
-        response_data, status_code = FriendshipService.send_friend_request(request.user, to_user)
+        response_data, status_code = FriendRequestService.send_friend_request(request.user, to_user)
 
         # service 메서드로부터 반환된 응답 데이터와 상태 코드를 기반으로 클라이언트에 응답 반환
         return Response(response_data, status=status_code)
+
+class FriendAcceptService:
+    pass
+
+class AcceptFriendView(APIView):
+    pass
 
 # class AcceptFriendRequestView(APIView):
 #     permission_classes = [permissions.IsAuthenticated]  # 이 뷰에 접근하기 위해 사용자가 인증되어야 함을 설정
@@ -107,3 +113,15 @@ class SendFriendRequestView(APIView):
 
 #         # 친구 요청이 pending에서 declined로 성공적으로 수정되었다는 응답 반환
 #         return Response({'message': '친구요청 거절 완료'}, status=200) # HTTP 상태 코드는 200(OK)로 요청이 성공적으로 처리되었음
+
+class FriendDeclineService:
+    pass
+
+class DeclineFriendView(APIView):
+    pass
+
+class FriendRequesWithdrawservice:
+    pass
+
+class WithDrawFriendRequestView(APIView):
+    pass
