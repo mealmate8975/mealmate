@@ -1,7 +1,7 @@
 from django.urls import path
-from .views import SendFriendRequestView #,AcceptFriendRequestView
+from .views import SendFriendRequestView,FriendAcceptView #,AcceptFriendRequestView
 
 urlpatterns = [
     path('send/', SendFriendRequestView.as_view(), name='friendship-send'),
-    # path('accept/', AcceptFriendRequestView.as_view(), name='friendship-accept'),
+    path('accept/', FriendAcceptView.as_view(), name='friend-accept'),
 ]

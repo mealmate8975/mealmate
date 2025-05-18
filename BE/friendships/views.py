@@ -10,7 +10,7 @@ User = get_user_model()
 class FriendRequestService:
     @staticmethod # 정적 메서드로 선언해서 서비스 객체 없이 호출 가능
     def send_friend_request(from_user, to_user):
-        forward = Friendship.objects.filter(from_user=from_user, to_user=to_user)
+        forward = Friendship.objects.filter(from_user=from_user, to_user=to_user) 
         backward = Friendship.objects.filter(from_user=to_user, to_user=from_user)
 
         if forward.exists() or backward.exists():# 이미 존재한다면 새로운 요청을 생성하지 않고 기존 레코드의 status만 수정하기
@@ -19,7 +19,7 @@ class FriendRequestService:
                 if forward_target.status == 'pending': # 기존 친구요청이 수락 대기중일 경우
                     return {'error': '이미 보낸 친구요청'}, 400
                 elif forward_target.status == 'accepted':
-                    return {'error': '이미 수락된 친구요청'}, 40
+                    return {'error': '이미 수락된 친구요청'}, 400
                 elif forward_target.status == 'declined': # 기존에 거절된 친구요청의 경우
                     forward_target.status = 'pending' # 재요청
                     forward_target.save()
@@ -62,10 +62,31 @@ class SendFriendRequestView(APIView):
         return Response(response_data, status=status_code)
 
 class FriendAcceptService:
-    pass
+    ERROR_RESPONSE = {'error': '수락할 수 없는 요청입니다.'}, 400
 
-class AcceptFriendView(APIView):
-    pass
+    @staticmethod
+    def accept_friend_request(from_user, to_user):
+        try:
+            friend_request = Friendship.objects.get(from_user=from_user, to_user=to_user)
+        except Friendship.DoesNotExist:
+            return FriendAcceptService.ERROR_RESPONSE
+
+        if friend_request.status != 'pending':
+            return FriendAcceptService.ERROR_RESPONSE
+
+        friend_request.status = 'accepted'
+        friend_request.save()
+        return {'message': '친구 요청 수락 완료'}, 200
+
+class FriendAcceptView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        from_user = request.data.get('from_user_id')
+        response_data, status_code = FriendAcceptService.accept_friend_request(from_user,request.user)
+
+        # accept_friend_request 메서드로부터 반환된 응답 데이터와 상태 코드를 기반으로 클라이언트에 응답 반환
+        return Response(response_data, status=status_code)
 
 # class AcceptFriendRequestView(APIView):
 #     permission_classes = [permissions.IsAuthenticated]  # 이 뷰에 접근하기 위해 사용자가 인증되어야 함을 설정
@@ -114,14 +135,14 @@ class AcceptFriendView(APIView):
 #         # 친구 요청이 pending에서 declined로 성공적으로 수정되었다는 응답 반환
 #         return Response({'message': '친구요청 거절 완료'}, status=200) # HTTP 상태 코드는 200(OK)로 요청이 성공적으로 처리되었음
 
-class FriendDeclineService:
-    pass
+# class FriendDeclineService:
+#     pass
 
-class DeclineFriendView(APIView):
-    pass
+# class DeclineFriendView(APIView):
+#     pass
 
-class FriendRequesWithdrawservice:
-    pass
+# class FriendRequesWithdrawservice:
+#     pass
 
-class WithDrawFriendRequestView(APIView):
-    pass
+# class WithDrawFriendRequestView(APIView):
+#     pass
