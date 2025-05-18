@@ -98,7 +98,7 @@ class AcceptFriendRequestTest(FriendTestBase):
         self.friendship = self.create_friendship(self.user2, self.user1, 'pending')
 
     def test_accept_friend_request(self):
-        url = reverse('friend-accept')  # URL 이름을 실제 사용 중인 이름으로 변경
+        url = reverse('friend-accept')
         response = self.client.post(url, {'from_user_id': self.user2.id})
 
         # 응답 상태 코드가 200인지 확인
@@ -111,7 +111,10 @@ class AcceptFriendRequestTest(FriendTestBase):
 
     def test_accept_nonexistent_friend_request(self):
         url = reverse('friend-accept')
-        response = self.client.post(url, {'from_user_id': 999})  # 존재하지 않는 사용자 ID
+        nonexistent_id = max(User.objects.all().values_list('id', flat=True), default=0) + 1000
+        response = self.client.post(url, {'from_user_id': nonexistent_id})  # 존재하지 않는 사용자 ID
+        ''' client는 APITestCase가 제공하는 인스턴스 변수
+        따라서 메서드 안에서 self.client로 접근하는 게 자연스럽고 필수적 '''
 
         # 응답 상태 코드가 400인지 확인
         self.assertEqual(response.status_code, 400)
