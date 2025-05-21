@@ -8,40 +8,56 @@ from django.shortcuts import get_object_or_404
 User = get_user_model()
 
 class FriendRequestService:
+    @staticmethod
+    def _handle_forward_existing(forward_first):
+        """
+        이미 존재하는 정방향 친구 요청 처리:
+        - pending: 중복 요청 오류 반환
+        - accepted: 이미 친구임
+        - declined: 재요청 처리
+        """
+        if forward_first.status == 'pending':
+            return {'error': '이미 보낸 친구요청'}, 400
+        elif forward_first.status == 'accepted':
+            return {'error': '이미 수락된 친구요청'}, 400
+        elif forward_first.status == 'declined':
+            forward_first.status = 'pending'
+            forward_first.save()
+            return {'message': '친구 재요청 완료'}, 200
+        else:
+            return {'error': '유효하지 않은 요청'}, 400 
+        
+    @staticmethod
+    def _handle_backward_existing(backward_first):
+        if backward_first.status == 'pending': # 기존 역방향 친구요청이 수락 대기중일 경우
+            backward_first.status = 'accepted' # 양방향 친구 요청 -> 친구관계 성립으로
+            # 친구요청 버튼 비활성화, 친구요청수락 버튼 활성화
+            # 단, 친구 요청 철회 기능이 존재할 필요가 있음
+            backward_first.save()
+            return {'message': '상호 요청으로 친구가 되었습니다.'}, 200
+        elif backward_first.status == 'accepted':
+            return {'error': '이미 친구관계'}, 400
+        elif backward_first.status == 'declined':
+            backward_first.status = 'pending'
+            tmp = backward_first.from_user
+            backward_first.from_user = backward_first.to_user
+            backward_first.to_user = tmp
+            backward_first.save()
+            return {'message': '친구 요청 완료'}, 200
+        else:
+            return {'error': '유효하지 않은 요청'}, 400 
+
     @staticmethod # 정적 메서드로 선언해서 서비스 객체 없이 호출 가능
     def send_friend_request(from_user, to_user):
         forward = Friendship.objects.filter(from_user=from_user, to_user=to_user) 
         backward = Friendship.objects.filter(from_user=to_user, to_user=from_user)
 
-        if forward.exists() or backward.exists():# 이미 존재한다면 새로운 요청을 생성하지 않고 기존 레코드의 status만 수정하기
-            if forward.exists(): # 정방향 요청이 존재할 경우
-                forward_target = forward.first() 
-                if forward_target.status == 'pending': # 기존 친구요청이 수락 대기중일 경우
-                    return {'error': '이미 보낸 친구요청'}, 400
-                elif forward_target.status == 'accepted':
-                    return {'error': '이미 수락된 친구요청'}, 400
-                elif forward_target.status == 'declined': # 기존에 거절된 친구요청의 경우
-                    forward_target.status = 'pending' # 재요청
-                    forward_target.save()
-                    return {'message': '친구 재요청 완료'}, 200
-            else:
-                backward_target = backward.first()
-                if backward_target.status == 'pending': # 기존 역방향 친구요청이 수락 대기중일 경우
-                    backward_target.status = 'accepted' # 양방향 친구 요청 -> 친구관계 성립으로
-                    # 친구요청 버튼 비활성화, 친구요청수락 버튼 활성화
-                    # 단, 친구 요청 철회 기능이 존재할 필요가 있음
-                    backward_target.save()
-                    return {'message': '상호 요청으로 친구가 되었습니다.'}, 200
-                elif backward_target.status == 'accepted':
-                    return {'error': '이미 친구관계'}, 400
-                elif backward_target.status == 'declined':
-                    backward_target.from_user = from_user
-                    backward_target.to_user = to_user
-                    backward_target.status = 'pending'
-                    backward_target.save()
-                    return {'message': '친구 요청 완료'}, 200
+        if forward.exists():
+            return FriendRequestService._handle_forward_existing(forward.first())
+        elif backward.exists():
+            return FriendRequestService._handle_backward_existing(backward.first())
         else: # 기존 친구 요청 레코드가 없어 새로 생성
-            Friendship.objects.create(from_user=from_user, to_user=to_user, status='pending') # 현재 로그인한 사용자(request.user)와 대상 사용자(to_user) 간의 친구 요청을 생성
+            Friendship.objects.create(from_user=from_user.id, to_user=to_user.id, status='pending') # 현재 로그인한 사용자(request.user)와 대상 사용자(to_user) 간의 친구 요청을 생성
             return {'message': '요청 보냄'}, 201 # 친구 요청이 성공적으로 생성되었음을 나타내는 응답 반환
         
 class SendFriendRequestView(APIView):
@@ -61,17 +77,38 @@ class SendFriendRequestView(APIView):
         # service 메서드로부터 반환된 응답 데이터와 상태 코드를 기반으로 클라이언트에 응답 반환
         return Response(response_data, status=status_code)
 
-# 친구요청 철회 기능
+# friendship 삭제 로직 (1.친구요청 철회와 2.친구 삭제의 공통 로직)
+class FriendshipDeletionService:
+    @staticmethod
+    def delete_friendship_if_exists(queryset):
+        target = queryset.first()
+        if target:
+            target.delete()
+            return {"message": "친구 관계가 삭제되었습니다."}, 200
+        return {"error": "삭제할 수 있는 친구 관계가 존재하지 않습니다."}, 404
+
+# 친구요청 철회 기능 (공통 삭제 로직을 이용하도록 수정)
 class FriendRequestCancelService:
     @staticmethod
     def cancel_request(from_user, to_user):
-        try:
-            # 요청된 친구추가 중에서 상태가 대기중인 것
-            requested_friendship = Friendship.objects.filter(from_user=from_user, to_user = to_user, status = 'pending')
-        except Friendship.DoesNotExist:
-            return {"ERROR" : "친구요청이 존재하지 않습니다."}, 404
-        requested_friendship.delete()
-        return {"MESSAGE" : "친구요청이 취소되었습니다."}, 200
+        queryset = Friendship.objects.filter(
+            from_user=from_user, 
+            to_user=to_user, 
+            status='pending'
+        )
+        return FriendshipDeletionService.delete_friendship_if_exists(queryset)
+
+# 친구요청 철회 기능(수정 전)
+# class FriendRequestCancelService:
+#     @staticmethod
+#     def cancel_request(from_user, to_user):
+#         try:
+#             # 요청된 친구추가 중에서 상태가 대기중인 것
+#             requested_friendship = Friendship.objects.filter(from_user=from_user, to_user = to_user, status = 'pending')
+#         except Friendship.DoesNotExist:
+#             return {"error" : "친구요청이 존재하지 않습니다."}, 404
+#         requested_friendship.delete()
+#         return {"message" : "친구요청이 취소되었습니다."}, 200
 
 class CancelFriendRequestView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -86,18 +123,17 @@ class CancelFriendRequestView(APIView):
         )
         return Response(response_data, status=status_code)
 
-class FriendRequestActionService:
-    ERROR_RESPONSE = {'error': '요청을 처리할 수 없습니다.'}, 400
-
+# 거절과 수락의 공통 로직
+class FriendRequestStatusUpdateService:
     @staticmethod
     def handle_request(from_user, to_user, new_status, success_message):
         try:
-            friend_request = Friendship.objects.get(from_user=from_user, to_user=to_user)
+            friend_request = Friendship.objects.get(from_user=from_user.id, to_user=to_user.id)
         except Friendship.DoesNotExist:
-            return FriendRequestActionService.ERROR_RESPONSE
+            return {'error': '요청을 처리할 수 없습니다.'}, 400
 
         if friend_request.status != 'pending':
-            return FriendRequestActionService.ERROR_RESPONSE
+            return {'error': '이미 처리된 친구 요청입니다.'}, 400
 
         friend_request.status = new_status
         friend_request.save()
@@ -106,8 +142,10 @@ class AcceptFriendRequestView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        from_user = request.data.get('from_user_id')
-        response_data, status_code = FriendRequestActionService.handle_request(
+        from_user_id = request.data.get('from_user_id')
+        from_user = get_object_or_404(User, id = from_user_id)
+
+        response_data, status_code = FriendRequestStatusUpdateService.handle_request(
             from_user=from_user,
             to_user=request.user,
             new_status='accepted',
@@ -118,8 +156,10 @@ class DeclineFriendRequestView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        from_user = request.data.get('from_user_id')
-        response_data, status_code = FriendRequestActionService.handle_request(
+        from_user_id = request.data.get('from_user_id')
+        from_user = get_object_or_404(User, id = from_user_id)
+
+        response_data, status_code = FriendRequestStatusUpdateService.handle_request(
             from_user=from_user,
             to_user=request.user,
             new_status='declined',
@@ -127,11 +167,43 @@ class DeclineFriendRequestView(APIView):
         )
         return Response(response_data, status=status_code)
     
-# 친구 삭제 기능
+# 친구 삭제 기능(수정 전)
 # class FriendDeleteService:
-#     pass
-# class DeleteFriendView(APIView):
-#     pass
+#     @staticmethod
+#     def delete_friend(from_user, to_user):
+#         forward = Friendship.objects.filter(from_user=from_user, to_user=to_user,status='accepted')
+#         backward = Friendship.objects.filter(from_user=to_user, to_user=from_user,status='accepted')
+
+#         forward_exists = forward.exists()
+#         backward_exists = backward.exists()
+
+#         if forward_exists or backward_exists:
+#             if forward_exists:
+#                 target = forward.first()
+#             elif backward_exists:
+#                 target = backward.first()
+#             target.delete()
+#             return {"message" : "친구 관계가 삭제되었습니다."}, 200
+#         else:
+#             return {"error" : "삭제할 수 있는 친구 관계가 존재하지 않습니다."}, 404
+
+# 친구 삭제 기능 (공통 삭제 로직을 이용하도록 수정)
+class FriendDeleteService:
+    @staticmethod
+    def delete_friend(from_user, to_user):
+        queryset = Friendship.objects.filter(from_user=from_user, to_user=to_user, status='accepted') | Friendship.objects.filter(
+        from_user=to_user, to_user=from_user, status='accepted')
+        return FriendshipDeletionService.delete_friendship_if_exists(queryset)
+
+class DeleteFriendView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        to_user_id = request.data.get('to_user_id')
+        to_user = get_object_or_404(User, id = to_user_id)
+
+        response_data, status_code = FriendDeleteService.delete_friend(request.user, to_user)
+        return Response(response_data, status=status_code)
 
 # 친구 차단 기능
 # class FriendBanService:
