@@ -43,6 +43,7 @@ class FriendRequestService:
         else: # 기존 친구 요청 레코드가 없어 새로 생성
             Friendship.objects.create(from_user=from_user, to_user=to_user, status='pending') # 현재 로그인한 사용자(request.user)와 대상 사용자(to_user) 간의 친구 요청을 생성
             return {'message': '요청 보냄'}, 201 # 친구 요청이 성공적으로 생성되었음을 나타내는 응답 반환
+        
 class SendFriendRequestView(APIView):
     permission_classes = [permissions.IsAuthenticated]  # 이 뷰에 접근하기 위해 사용자가 인증되어야 함을 설정
 
@@ -61,10 +62,29 @@ class SendFriendRequestView(APIView):
         return Response(response_data, status=status_code)
 
 # 친구요청 철회 기능
-# class FriendRequestWithdrawService:
-#     pass
-# class WithdrawFriendRequestView(APIView):
-#     pass
+class FriendRequestCancelService:
+    @staticmethod
+    def cancel_request(from_user, to_user):
+        try:
+            # 요청된 친구추가 중에서 상태가 대기중인 것
+            requested_friendship = Friendship.objects.filter(from_user=from_user, to_user = to_user, status = 'pending')
+        except Friendship.DoesNotExist:
+            return {"ERROR" : "친구요청이 존재하지 않습니다."}, 404
+        requested_friendship.delete()
+        return {"MESSAGE" : "친구요청이 취소되었습니다."}, 200
+
+class CancelFriendRequestView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self,request):
+        to_user_id = request.data.get('to_user_id')
+        to_user = get_object_or_404(User, id = to_user_id)
+
+        response_data, status_code = FriendRequestCancelService.cancel_request(
+            from_user = request.user, 
+            to_user = to_user 
+        )
+        return Response(response_data, status=status_code)
 
 class FriendRequestActionService:
     ERROR_RESPONSE = {'error': '요청을 처리할 수 없습니다.'}, 400

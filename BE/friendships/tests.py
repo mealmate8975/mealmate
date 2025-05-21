@@ -170,3 +170,18 @@ class DeclineFriendRequestTest(FriendTestBase):
         # 응답 상태 코드가 400인지 확인
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['error'], '요청을 처리할 수 없습니다.')
+
+class CancelDrawFriendRequest(FriendTestBase):
+    def setUp(self):
+        super().setUp() # user1 -> user2
+        self.create_friendship(self.user1, self.user2, 'pending') # user1 -> user2 요청 상태
+
+    # 상대가 수락 / 거절 하기 전 취소
+    def test_cancel_pending_request(self): 
+        url = reverse('cancel-friend-request')
+        response = self.client.post(url, {'to_user_id': self.user2.id})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['message'], '친구 요청이 철회되었습니다.')
+        self.assertFalse(Friendship.objects.filter(from_user=self.user1, to_user=self.user2).exists())
+        
