@@ -99,16 +99,16 @@ class FriendRequestCancelService:
         return FriendshipDeletionService.delete_friendship_if_exists(queryset)
 
 # 친구요청 철회 기능(수정 전)
-# class FriendRequestCancelService:
-#     @staticmethod
-#     def cancel_request(from_user, to_user):
-#         try:
-#             # 요청된 친구추가 중에서 상태가 대기중인 것
-#             requested_friendship = Friendship.objects.filter(from_user=from_user, to_user = to_user, status = 'pending')
-#         except Friendship.DoesNotExist:
-#             return {"error" : "친구요청이 존재하지 않습니다."}, 404
-#         requested_friendship.delete()
-#         return {"message" : "친구요청이 취소되었습니다."}, 200
+class FriendRequestCancelService:
+    @staticmethod
+    def cancel_request(from_user, to_user):
+        try:
+            # 보낸 요청중 아직 대기중인 것
+            requested_friendship = Friendship.objects.filter(from_user=from_user, to_user = to_user, status = 'pending')
+        except Friendship.DoesNotExist:
+            return {"error" : "친구요청이 존재하지 않습니다."}, 404
+        requested_friendship.delete()
+        return {"message" : "친구요청이 취소되었습니다."}, 200
 
 class CancelFriendRequestView(APIView):
     permission_classes = [permissions.IsAuthenticated]

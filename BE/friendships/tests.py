@@ -171,7 +171,7 @@ class DeclineFriendRequestTest(FriendTestBase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['error'], '요청을 처리할 수 없습니다.')
 
-class CancelDrawFriendRequest(FriendTestBase):
+class CancelFriendRequest(FriendTestBase):
     def setUp(self):
         super().setUp() # user1 -> user2
         self.create_friendship(self.user1, self.user2, 'pending') # user1 -> user2 요청 상태
@@ -181,7 +181,7 @@ class CancelDrawFriendRequest(FriendTestBase):
         url = reverse('cancel-friend-request')
         response = self.client.post(url, {'to_user_id': self.user2.id})
 
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data['message'], '친구 요청이 철회되었습니다.')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['message'], '친구요청이 취소되었습니다.')
         self.assertFalse(Friendship.objects.filter(from_user=self.user1, to_user=self.user2).exists())
         
