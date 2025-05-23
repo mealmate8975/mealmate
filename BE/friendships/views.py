@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import permissions
 from .models import Friendship
 from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
+# from django.shortcuts import get_object_or_404
 
 User = get_user_model()
 
@@ -57,7 +57,7 @@ class FriendRequestService:
         elif backward.exists():
             return FriendRequestService._handle_backward_existing(backward.first())
         else: # 기존 친구 요청 레코드가 없어 새로 생성
-            Friendship.objects.create(from_user=from_user.id, to_user=to_user.id, status='pending') # 현재 로그인한 사용자(request.user)와 대상 사용자(to_user) 간의 친구 요청을 생성
+            Friendship.objects.create(from_user=from_user, to_user=to_user, status='pending') # 현재 로그인한 사용자(request.user)와 대상 사용자(to_user) 간의 친구 요청을 생성
             return {'message': '요청 보냄'}, 201 # 친구 요청이 성공적으로 생성되었음을 나타내는 응답 반환
         
 class SendFriendRequestView(APIView):
@@ -67,8 +67,10 @@ class SendFriendRequestView(APIView):
         to_user_id = request.data.get('to_user_id')  # 요청 데이터에서 'to_user_id' 가져오기
         
         # 주어진 ID로 사용자를 데이터베이스에서 검색
-        to_user = get_object_or_404(User, id=to_user_id)  # ID에 해당하는 사용자 객체를 가져오기
-
+        try:
+            to_user = User.objects.get(id=to_user_id)  # ID에 해당하는 사용자 객체를 가져오기
+        except User.DoesNotExist:
+            return Response({'error': '요청을 처리할 수 없습니다.'}, status=404)
         # FriendshipService 클래스의 정적 메서드를 호출하여 친구 요청 처리 로직 실행
         # request.user: 현재 로그인한 사용자 (친구 요청을 보내는 사람)
         # to_user: 요청을 받을 대상 사용자
@@ -81,9 +83,8 @@ class SendFriendRequestView(APIView):
 class FriendshipDeletionService:
     @staticmethod
     def delete_friendship_if_exists(queryset):
-        target = queryset.first()
-        if target:
-            target.delete()
+        if queryset.exists():
+            queryset.delete()
             return {"message": "친구 관계가 삭제되었습니다."}, 200
         return {"error": "삭제할 수 있는 친구 관계가 존재하지 않습니다."}, 404
 
@@ -115,7 +116,10 @@ class CancelFriendRequestView(APIView):
     
     def post(self,request):
         to_user_id = request.data.get('to_user_id')
-        to_user = get_object_or_404(User, id = to_user_id)
+        try:
+            to_user = User.objects.get(id=to_user_id)  # ID에 해당하는 사용자 객체를 가져오기
+        except User.DoesNotExist:
+            return Response({'error': '요청을 처리할 수 없습니다.'}, status=404)  # 404 상태 코드 반환
 
         response_data, status_code = FriendRequestCancelService.cancel_request(
             from_user = request.user, 
@@ -128,9 +132,9 @@ class FriendRequestStatusUpdateService:
     @staticmethod
     def handle_request(from_user, to_user, new_status, success_message):
         try:
-            friend_request = Friendship.objects.get(from_user=from_user.id, to_user=to_user.id)
+            friend_request = Friendship.objects.get(from_user=from_user, to_user=to_user)
         except Friendship.DoesNotExist:
-            return {'error': '요청을 처리할 수 없습니다.'}, 400
+            return {'error': '요청을 처리할 수 없습니다.'}, 404
 
         if friend_request.status != 'pending':
             return {'error': '이미 처리된 친구 요청입니다.'}, 400
@@ -143,8 +147,11 @@ class AcceptFriendRequestView(APIView):
 
     def post(self, request):
         from_user_id = request.data.get('from_user_id')
-        from_user = get_object_or_404(User, id = from_user_id)
-
+        try:
+            from_user = User.objects.get(id = from_user_id)
+        except User.DoesNotExist:
+            return Response({'error': '요청을 처리할 수 없습니다.'}, status=404)
+        
         response_data, status_code = FriendRequestStatusUpdateService.handle_request(
             from_user=from_user,
             to_user=request.user,
@@ -157,7 +164,10 @@ class DeclineFriendRequestView(APIView):
 
     def post(self, request):
         from_user_id = request.data.get('from_user_id')
-        from_user = get_object_or_404(User, id = from_user_id)
+        try:
+            from_user = User.objects.get(id = from_user_id)
+        except User.DoesNotExist:
+            return Response({'error': '요청을 처리할 수 없습니다.'}, status=404)
 
         response_data, status_code = FriendRequestStatusUpdateService.handle_request(
             from_user=from_user,
@@ -200,7 +210,10 @@ class DeleteFriendView(APIView):
 
     def post(self, request):
         to_user_id = request.data.get('to_user_id')
-        to_user = get_object_or_404(User, id = to_user_id)
+        try:
+            to_user = User.objects.get(id=to_user_id)
+        except User.DoesNotExist:
+            return Response({'error': '요청을 처리할 수 없습니다.'}, status=404)
 
         response_data, status_code = FriendDeleteService.delete_friend(request.user, to_user)
         return Response(response_data, status=status_code)

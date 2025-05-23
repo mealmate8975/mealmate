@@ -113,11 +113,13 @@ class AcceptFriendRequestTest(FriendTestBase):
         url = reverse('accept-friend-request')
         nonexistent_id = max(User.objects.all().values_list('id', flat=True), default=0) + 1000
         response = self.client.post(url, {'from_user_id': nonexistent_id})  # 존재하지 않는 사용자 ID
-        ''' client는 APITestCase가 제공하는 인스턴스 변수
-        따라서 메서드 안에서 self.client로 접근하는 게 자연스럽고 필수적 '''
+        ''' 
+        client는 APITestCase가 제공하는 인스턴스 변수
+        따라서 메서드 안에서 self.client로 접근하는 게 자연스럽고 필수적 
+        '''
 
-        # 응답 상태 코드가 400인지 확인
-        self.assertEqual(response.status_code, 400)
+        # 응답 상태 코드가 404인지 확인
+        self.assertEqual(response.status_code, 404)
         self.assertEqual(response.data['error'], '요청을 처리할 수 없습니다.')
 
     def test_accept_already_accepted_friend_request(self):
@@ -129,7 +131,7 @@ class AcceptFriendRequestTest(FriendTestBase):
 
         # 응답 상태 코드가 400인지 확인
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data['error'], '요청을 처리할 수 없습니다.')
+        self.assertEqual(response.data['error'], '이미 처리된 친구 요청입니다.')
 
 class DeclineFriendRequestTest(FriendTestBase):
     def setUp(self):
@@ -153,11 +155,13 @@ class DeclineFriendRequestTest(FriendTestBase):
         url = reverse('decline-friend-request')
         nonexistent_id = max(User.objects.all().values_list('id', flat=True), default=0) + 1000
         response = self.client.post(url, {'from_user_id': nonexistent_id})  # 존재하지 않는 사용자 ID
-        ''' client는 APITestCase가 제공하는 인스턴스 변수
-        따라서 메서드 안에서 self.client로 접근하는 게 자연스럽고 필수적 '''
+        ''' 
+        client는 APITestCase가 제공하는 인스턴스 변수
+        따라서 메서드 안에서 self.client로 접근하는 게 자연스럽고 필수적 
+        '''
 
-        # 응답 상태 코드가 400인지 확인
-        self.assertEqual(response.status_code, 400)
+        # 응답 상태 코드가 404인지 확인
+        self.assertEqual(response.status_code, 404)
         self.assertEqual(response.data['error'], '요청을 처리할 수 없습니다.')
 
     def test_decline_already_declined_friend_request(self):
@@ -169,7 +173,7 @@ class DeclineFriendRequestTest(FriendTestBase):
 
         # 응답 상태 코드가 400인지 확인
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data['error'], '요청을 처리할 수 없습니다.')
+        self.assertEqual(response.data['error'], '이미 처리된 친구 요청입니다.')
 
 class CancelFriendRequest(FriendTestBase):
     def setUp(self):
@@ -184,4 +188,18 @@ class CancelFriendRequest(FriendTestBase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['message'], '친구요청이 취소되었습니다.')
         self.assertFalse(Friendship.objects.filter(from_user=self.user1, to_user=self.user2).exists())
+        
+class DeleteFriendTest(FriendTestBase):
+    def setUp(self):
+        super().setUp()
+        self.create_friendship(self.user1, self.user2, 'accepted')
+
+    def test_delete_friend(self):
+        url = reverse('delete-friendship')
+        response = self.client.post(url, {'to_user_id': self.user2.id})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['message'], '친구 관계가 삭제되었습니다.')
+        self.assertFalse(Friendship.objects.filter(from_user=self.user1, to_user=self.user2).exists())
+        self.assertFalse(Friendship.objects.filter(from_user=self.user2, to_user=self.user1).exists())
         
