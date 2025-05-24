@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import permissions
 from .models import Friendship
 from django.contrib.auth import get_user_model
-# from django.shortcuts import get_object_or_404
+from accounts.models import UserBlock
 
 User = get_user_model()
 
@@ -70,10 +70,13 @@ class SendFriendRequestView(APIView):
         try:
             to_user = User.objects.get(id=to_user_id)  # ID에 해당하는 사용자 객체를 가져오기
         except User.DoesNotExist:
-            return Response({'error': '요청을 처리할 수 없습니다.'}, status=404)
+            return Response({'error': '해당 유저가 존재하지 않습니다.'}, status=404)
         # FriendshipService 클래스의 정적 메서드를 호출하여 친구 요청 처리 로직 실행
         # request.user: 현재 로그인한 사용자 (친구 요청을 보내는 사람)
         # to_user: 요청을 받을 대상 사용자
+        if UserBlock.objects.filter(blocker=to_user, blocked_user=request.user).exists():
+            return Response({'error': '나를 차단한 유저에게 친구 요청을 보낼 수 없습니다.'}, status=400)
+        
         response_data, status_code = FriendRequestService.send_friend_request(request.user, to_user)
 
         # service 메서드로부터 반환된 응답 데이터와 상태 코드를 기반으로 클라이언트에 응답 반환
@@ -88,7 +91,7 @@ class FriendshipDeletionService:
             return {"message": "친구 관계가 삭제되었습니다."}, 200
         return {"error": "삭제할 수 있는 친구 관계가 존재하지 않습니다."}, 404
 
-# 친구요청 철회 기능 (공통 삭제 로직을 이용하도록 수정)
+# 친구요청 철회 기능 (공통 삭제 로직을 이용하도록 수정됨)
 class FriendRequestCancelService:
     @staticmethod
     def cancel_request(from_user, to_user):

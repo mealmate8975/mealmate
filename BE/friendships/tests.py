@@ -2,6 +2,7 @@ from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
 from django.urls import reverse  # URL을 역으로 찾기 위한 함수
 from .models import Friendship
+from accounts.models import UserBlock
 
 User = get_user_model()
 
@@ -21,10 +22,26 @@ class FriendTestBase(APITestCase):
         return Friendship.objects.create(from_user=from_user, to_user=to_user, status=status)
 
 class SendFriendRequestTest(FriendTestBase):
+    # 존재하지 않는 유저에게 요청을 보냈을 때 실패
+    def test_send_friend_request_to_nonexistent_user(self):
+        url = reverse('send-friend-request')
+        nonexistent_user_id = User.objects.latest('id').id + 1
+        response = self.client.post(url,{'to_user_id':nonexistent_user_id})
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.data['error'], '해당 유저가 존재하지 않습니다.')
+
     def send_request(self, to_user):
         url = reverse('send-friend-request')
         return self.client.post(url, {'to_user_id': to_user.id})
     
+    # 나를 차단한 유저에게 친구 요청을 보냈을 때 실패
+    def test_send_friend_request_to_blocked_user(self):
+        UserBlock.objects.create(blocker=self.user2, blocked_user=self.user1)
+        url = reverse('send-friend-request')
+        response = self.client.post(url,{'to_user_id':self.user2.id})
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['error'], '나를 차단한 유저에게 친구 요청을 보낼 수 없습니다.')
+
     def test_send_friend_request(self):  # 친구 요청을 보내는 기능을 테스트하는 메서드
         response = self.send_request(self.user2)
         
