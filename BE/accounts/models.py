@@ -36,4 +36,12 @@ class CustomUser(AbstractBaseUser):
 
     def __str__(self):
         return self.email
-    
+
+# 유저 차단 테이블
+class UserBlock(models.Model):
+    blocker = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='blocker')
+    blocked_user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='blocked_user')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.blocker.email} blocked {self.blocked_user.email}"
