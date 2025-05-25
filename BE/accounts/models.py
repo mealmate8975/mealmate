@@ -1,13 +1,27 @@
-from django.contrib.auth.models import AbstractBaseUser
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.db import models
 
-class CustomUser(AbstractBaseUser):
 
+class CustomUserManager(BaseUserManager):
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError("이메일 입력은 필수입니다.")
+        if not password:
+            raise ValueError("비밀번호 입력은 필수입니다.")
+        email = self.normalize_email(email) # 이메일을 평문화합니다.EX) TeST@gmail.COM -> test@gmail.com
+        user = self.model(email = email, **extra_fields) # user = CustomUser(email = ..., password = ...) 식으로 생성됨
+        user.set_password(password) # 비밀번호 해시(hash)화
+        user.save(using = self._db) # 연결된 db에 저장(_db)
+        return user
+
+
+
+class CustomUser(AbstractBaseUser):
+    objects = CustomUserManager() # 유저 생성이랑 연결
     GENDER_CHOICES = [
     ('0', 'Male'),
     ('1', 'Female'),
     ]
-
     # AbstractBaseUser는 자동으로 username을 아이디로 사용한다
     # 난 아이디를 이메일로 할것이라 username을 None으로 처리
     username = None

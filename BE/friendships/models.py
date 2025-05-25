@@ -26,7 +26,7 @@ class Friendship(models.Model):
         choices=STATUS_CHOICES,
         default='pending'
     )
-    requested_at = models.DateTimeField(auto_now_add=True),
+    requested_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
