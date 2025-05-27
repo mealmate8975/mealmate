@@ -13,6 +13,6 @@ class ScheduleSerializer(serializers.ModelSerializer):
             'schedule_at',
             'schedule_condition'
         ]
-        
+
         # 서버가 자동으로 할당합니다. 뷰에서 request.user로 해놔서 자동으로 로그인한 유저가 생성자가 됩니다.
-        read_only_fields = ['created_by'] 
+        read_only_fields = ['created_by']
