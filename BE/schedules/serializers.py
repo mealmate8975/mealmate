@@ -10,7 +10,9 @@ class ScheduleSerializer(serializers.ModelSerializer):
             'created_by',
             'schedule_name',
             'created_at',
-            'schedule_at',
+            'schedule_start',
+            'schedule_end',
+            'is_meal',
             'schedule_condition'
         ]
 

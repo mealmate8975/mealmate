@@ -33,7 +33,9 @@ class ScheduleAPITestCase(APITestCase):
             rest_id=self.restaurant,
             created_by=self.user,
             schedule_name="정상회담",
-            schedule_at=timezone.now() + timezone.timedelta(days=1),
+            schedule_start=timezone.now() + timezone.timedelta(days=1),
+            schedule_end=timezone.now() + timezone.timedelta(days=1, hours=2),
+            is_meal=True,
             schedule_condition={"날씨": "지림", "분위기": "지림"}
         )
 
@@ -52,7 +54,9 @@ class ScheduleAPITestCase(APITestCase):
         data = {
             "schedule_name": "소개팅",
             "rest_id": self.restaurant.rest_id,
-            "schedule_at": (timezone.now() + timezone.timedelta(days=3)).isoformat(),
+            "schedule_start": (timezone.now() + timezone.timedelta(days=3)).isoformat(),
+            "schedule_end": (timezone.now() + timezone.timedelta(days=3, hours=2)).isoformat(),
+            "is_meal": False,
             "schedule_condition": {"날씨": "안지림", "분위기": "안좋음"}
         }
         response = self.client.post(url, data, format="json")
@@ -84,6 +88,7 @@ class ScheduleServiceTests(TestCase):
             nickname="testnick",
             gender="0"
         )
+        self.client.force_authenticate(user=self.user)  # 인증된 사용자 설정 추가
         self.restaurant = Restaurant.objects.create(
             rest_name="Test Restaurant",
             rest_address="Test Address",
@@ -92,7 +97,9 @@ class ScheduleServiceTests(TestCase):
         self.schedule_data = {
             "rest_id": self.restaurant.rest_id,
             "schedule_name": "Initial Schedule",
-            "schedule_at": timezone.now() + timezone.timedelta(days=1),
+            "schedule_start": timezone.now() + timezone.timedelta(days=1),
+            "schedule_end": timezone.now() + timezone.timedelta(days=1, hours=2),
+            "is_meal": True,
             "schedule_condition": {"weather": "sunny"},
         }
 
@@ -125,13 +132,8 @@ class ScheduleServiceTests(TestCase):
         with self.assertRaises(Exception):
             ScheduleService.get_schedule(created["schedule_id"], self.user)
     
-    def test_create_schedule_optional_name(self):
+    def test_create_schedule_with_minimal_fields(self):
         url = reverse("schedules:schedule-list-create")
         self.client.force_authenticate(user=self.user)
-        data = {
-            "rest_id": self.restaurant.rest_id,
-            "schedule_at": timezone.now() + timezone.timedelta(days=3),
-            "schedule_condition": {"날씨": "안지림", "분위기": "안좋음"}
-        }
-        response = self.client.post(url, data, format="json")
-        self.assertEqual(response.status_code, 201)  # 성공적으로 생성되어야 함
+        response = self.client.post(url, {"created_by" : self.user.id}, format="json")
+        self.assertEqual(response.status_code, 201)

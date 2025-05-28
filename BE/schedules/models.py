@@ -9,5 +9,10 @@ class Schedules(models.Model):
 
     schedule_name = models.CharField(null=True,max_length=100,blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    schedule_at = models.DateTimeField(null=True,blank=True)
+    # schedule_at = models.DateTimeField(null=True,blank=True)
     schedule_condition = models.JSONField(null=True,blank=True)
+
+    # 약속 시간 취합을 위해 필요한 필드 수정 및 추가
+    schedule_start = models.DateTimeField(null=True,blank=True)
+    schedule_end = models.DateTimeField(null=True,blank=True)
+    is_meal = models.BooleanField(default=True)
