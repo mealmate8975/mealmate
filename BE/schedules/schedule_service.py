@@ -2,11 +2,12 @@
 SOLID 원칙을 적용한 Django REST Framework에서의 대표적인 코드 구성 방식
 
 schedule_service.py
-스케줄 생성, 조회, 수정, 삭제에 대한 실제 비즈니스 로직을 수행하는 서비스 계층
+실제 비즈니스 로직을 수행하는 서비스 계층
 
 views.py
 클라이언트의 HTTP 요청을 받고, 인증과 응답 처리만 담당하는 컨트롤러 역할의 뷰 레이어
 '''
+
 from .models import Schedules
 from .serializers import ScheduleSerializer
 from django.shortcuts import get_object_or_404
@@ -41,3 +42,26 @@ class ScheduleService:
     def delete_schedule(pk, user):
         schedule = get_object_or_404(Schedules, pk=pk, created_by=user)
         schedule.delete()
+
+    from django.utils import timezone
+    from datetime import timedelta
+    from participants.models import Participants
+
+    # @staticmethod
+    # def get_possible_times_for_users(schedule_id):
+    #     host_id = get_object_or_404(Schedules,pk=schedule_id).created_by
+
+
+    #     user_ids = []
+
+    #     # 1. 모든 user의 스케줄 가져오기
+    #     schedule_ids = Schedules.objects.filter(user_id__in=user_ids).values_list('schedule_id', flat=True).distinct()
+
+    #     # 2. 해당 스케줄의 시간 가져오기
+    #     schedules = Schedules.objects.filter(schedule_id__in=schedule_ids)
+
+    #     # 3. 각 시간대를 list로 저장
+    #     time_slots = [(s.schedule_start, s.schedule_end) for s in schedules if s.schedule_start and s.schedule_end]
+
+    #     # 4. time_slots 겹치지 않는 공통 시간대 계산 (예: interval 단위 등)
+    #     return calculate_common_time_slots(time_slots)

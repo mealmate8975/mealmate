@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'friendships',
     'participants',
     'schedules',
+    'chatroom',
 ]
 
 MIDDLEWARE = [
