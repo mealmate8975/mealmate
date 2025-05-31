@@ -9,7 +9,7 @@ class Participants(models.Model):
         on_delete=models.CASCADE,
         related_name="participants"
     )
-    participants = models.ForeignKey(
+    participant = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete= models.SET_NULL,
         null=True,

@@ -47,21 +47,20 @@ class ScheduleService:
     from datetime import timedelta
     from participants.models import Participants
 
-    # @staticmethod
-    # def get_possible_times_for_users(schedule_id):
-    #     host_id = get_object_or_404(Schedules,pk=schedule_id).created_by
+    # (호스트의 id + 게스트들의 id) 추출
+    @staticmethod
+    def get_all_related_user_ids(pk,user): # 해당 스케줄의 pk와 request.user(생성자이자 호스트)를 통해 스케줄 호스트와 게스트들의 id를 찾아서 리턴하는 함수
+        target_schedule = get_object_or_404(Schedules,pk=pk)
+        if user.id == target_schedule.created_by.id: # user가 pk로 찾은 스케줄의 생성자와 일치하는지 확인하는 로직
+            participant_id_list = Participants.objects.filter(schedule = target_schedule.id).value_list("participants",flat=True)
+            # paticipants 테이블에서 스케줄 pk가 일치하는 참가자 id 모두 가져오기(중복없이) + user id
 
+    # 참여자로 스케줄 찾기
+    # (호스트의 id + 게스트들의 id)로 participants 테이블에서 스케줄 id 추출(중복제거)
 
-    #     user_ids = []
+    # 생성자로 스케줄 찾기
+    # (호스트의 id + 게스트들의 id)로 schedules 테이블에서 생성자로 스케줄 id 추출
 
-    #     # 1. 모든 user의 스케줄 가져오기
-    #     schedule_ids = Schedules.objects.filter(user_id__in=user_ids).values_list('schedule_id', flat=True).distinct()
+    # 스케줄 id 중복제거하기
 
-    #     # 2. 해당 스케줄의 시간 가져오기
-    #     schedules = Schedules.objects.filter(schedule_id__in=schedule_ids)
-
-    #     # 3. 각 시간대를 list로 저장
-    #     time_slots = [(s.schedule_start, s.schedule_end) for s in schedules if s.schedule_start and s.schedule_end]
-
-    #     # 4. time_slots 겹치지 않는 공통 시간대 계산 (예: interval 단위 등)
-    #     return calculate_common_time_slots(time_slots)
+    # 스케줄 id로 스케줄 테이블에서 약속 시작과 끝 정보 취합을 통해 모두가 가능한 시간 산출해내기
