@@ -13,6 +13,7 @@ from .serializers import ScheduleSerializer
 from django.shortcuts import get_object_or_404
 from participants.models import Participants
 from rest_framework.exceptions import PermissionDenied
+from itertools import chain
 
 class ScheduleService:
     @staticmethod
@@ -46,7 +47,6 @@ class ScheduleService:
         schedule.delete()
 
     # participant = host + guest
-
     # (호스트의 id + 게스트들의 id) 추출
     @staticmethod
     def get_participant_user_ids(pk,user): # 해당 스케줄의 pk와 request.user(생성자이자 호스트)를 통해 스케줄 호스트와 게스트들의 id를 찾아서 리턴하는 함수
@@ -54,9 +54,9 @@ class ScheduleService:
 
         if user.id != target_schedule.created_by.id: # user.id가 pk로 찾은 스케줄의 생성자 id와 일치하는지 확인하는 로직
             raise PermissionDenied("해당 스케줄에 대한 권한이 없습니다.")
-        
-        participant_id_list = list(Participants.objects.filter(schedule=target_schedule).values_list("participants_id", flat=True).distinct())
-        participant_id_list.append(user.id)
+
+        guest_id_list = list(Participants.objects.filter(schedule=target_schedule).values_list("participants_id", flat=True).distinct())
+        participant_id_list = guest_id_list + [user.id]
 
         return participant_id_list
 
@@ -64,24 +64,23 @@ class ScheduleService:
     def get_related_schedule_ids_by_user_ids(pk, user):
         participant_id_list = ScheduleService.get_participant_user_ids(pk, user)
 
-        # 참여자로 스케줄 찾기
+        # 스케줄 참여자로 스케줄 찾기
         # (호스트의 id + 게스트들의 id)로 participants 테이블에서 스케줄 id 추출(중복제거)
-        guest_schedule_ids = list(Participants.objects.filter(
+        schedule_id_queryset_from_Participants = Participants.objects.filter(
             participant__in=participant_id_list
-        ).values_list("schedule", flat=True).distinct())
+        ).values_list("schedule", flat=True).distinct()
 
-        # 생성자로 스케줄 찾기
+        # 스케줄 생성자로 스케줄 찾기
         # (호스트의 id + 게스트들의 id)로 schedules 테이블에서 생성자로 스케줄 id 추출
-        host_schedule_ids = list(Schedules.objects.filter(
+        schedule_id_queryset_from_Schedules = Schedules.objects.filter(
             created_by__in=participant_id_list
-        ).values_list("schedule_id", flat=True).distinct())
+        ).values_list("schedule_id", flat=True).distinct()
 
-        return list(set(guest_schedule_ids + host_schedule_ids))
+        combined_schedule_ids = chain(schedule_id_queryset_from_Participants, schedule_id_queryset_from_Schedules)
+        # itertools.chain 객체이며, 단순한 lazy iterator
+
+        return set(combined_schedule_ids) # 중복 제거
     
-    # 데이터가 많을 때 성능 저하를 방지하기 위해서 리스트를 사용하지 않는 방식을 고민해보기
-
-        
-
-    # 스케줄 id 중복제거하기
+    # 데이터가 많을 때 성능 저하를 방지하기 위해서 리스트를 최대한 적게 사용하는 방식을 고민해봤음
 
     # 스케줄 id로 스케줄 테이블에서 약속 시작과 끝 정보 취합을 통해 모두가 가능한 시간 산출해내기

@@ -6,7 +6,7 @@ views.py
 인증과 응답 처리만 담당하는 컨트롤러 역할의 뷰 레이어
 
 schedule_service.py
-스케줄 생성, 조회, 수정, 삭제에 대한 실제 비즈니스 로직을 수행하는 서비스 계층
+실제 비즈니스 로직을 수행하는 서비스 계층
 '''
 
 from rest_framework.permissions import IsAuthenticated
