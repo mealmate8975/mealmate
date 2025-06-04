@@ -14,6 +14,9 @@ from django.shortcuts import get_object_or_404
 from participants.models import Participants
 from rest_framework.exceptions import PermissionDenied
 from itertools import chain
+from rest_framework.exceptions import ValidationError
+from django.db.models import Q
+from django.utils import timezone
 
 class ScheduleService:
     @staticmethod
@@ -76,11 +79,21 @@ class ScheduleService:
             created_by__in=participant_id_list
         ).values_list("schedule_id", flat=True).distinct()
 
-        combined_schedule_ids = chain(schedule_id_queryset_from_Participants, schedule_id_queryset_from_Schedules)
+        combined_schedule_ids = set(chain(schedule_id_queryset_from_Participants, schedule_id_queryset_from_Schedules))
         # itertools.chain 객체이며, 단순한 lazy iterator
 
-        return set(combined_schedule_ids) # 중복 제거
-    
-    # 데이터가 많을 때 성능 저하를 방지하기 위해서 리스트를 최대한 적게 사용하는 방식을 고민해봤음
+        return combined_schedule_ids
+    # 데이터가 많을 때 성능 저하를 방지하기 위해서 리스트를 최대한 적게 사용
 
-    # 스케줄 id로 스케줄 테이블에서 약속 시작과 끝 정보 취합을 통해 모두가 가능한 시간 산출해내기
+    # 스케줄 id로 스케줄 테이블에서 약속 시작과 끝 정보 취합을 통해 모두가 불가능한 시간 산출
+    def get_unavailable_time(pk, user,new_schedule_start,new_schedule_end):
+        if new_schedule_end < new_schedule_start:
+            raise ValidationError("시작 날짜가 끝나는 날짜 보다 늦습니다.")
+        
+        related_schedule_id_set = ScheduleService.get_related_schedule_ids_by_user_ids(pk,user)
+        new_schedule_start_month = new_schedule_start.month
+        new_schedule_end_month = new_schedule_end.month
+
+        related_month_range = range(new_schedule_start_month,new_schedule_end_month+1)
+        related_schedule_queryset = Schedules.objects.filter(schedule_id__in=related_schedule_id_set).filter(Q(schedule_start__month__in=related_month_range) | Q(schedule_end__month__in=related_month_range)).values_list("schedule_start", "schedule_end").distinct()
+        return related_schedule_queryset
