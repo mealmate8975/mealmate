@@ -85,15 +85,34 @@ class ScheduleService:
         return combined_schedule_ids
     # 데이터가 많을 때 성능 저하를 방지하기 위해서 리스트를 최대한 적게 사용
 
-    # 스케줄 id로 스케줄 테이블에서 약속 시작과 끝 정보 취합을 통해 모두가 불가능한 시간 산출
-    def get_unavailable_time(pk, user,new_schedule_start,new_schedule_end):
-        if new_schedule_end < new_schedule_start:
-            raise ValidationError("시작 날짜가 끝나는 날짜 보다 늦습니다.")
-        
+    # 스케줄 id로 스케줄 테이블에서 해당하는 달에 속해있는 약속들 찾기
+    def get_schedules_in_month_range(pk, user,new_schedule_start,new_schedule_end):        
         related_schedule_id_set = ScheduleService.get_related_schedule_ids_by_user_ids(pk,user)
         new_schedule_start_month = new_schedule_start.month
         new_schedule_end_month = new_schedule_end.month
 
-        related_month_range = range(new_schedule_start_month,new_schedule_end_month+1)
-        related_schedule_queryset = Schedules.objects.filter(schedule_id__in=related_schedule_id_set).filter(Q(schedule_start__month__in=related_month_range) | Q(schedule_end__month__in=related_month_range)).values_list("schedule_start", "schedule_end").distinct()
-        return related_schedule_queryset
+        new_schedule_month_range = range(new_schedule_start_month,new_schedule_end_month+1)
+        schedules_in_month_range = Schedules.objects.filter(schedule_id__in=related_schedule_id_set).filter(Q(schedule_start__month__in=new_schedule_month_range) | Q(schedule_end__month__in=new_schedule_month_range)).distinct()
+        
+        return schedules_in_month_range
+    
+    # 모두가 가능한 시간대 고르기
+    def select_available_time(pk, user,new_schedule_start,new_schedule_end):
+        if new_schedule_end < new_schedule_start:
+            raise ValidationError("시작 날짜가 끝나는 날짜 보다 늦습니다.")
+
+        schedules_in_month_range = ScheduleService.get_schedules_in_month_range(pk, user,new_schedule_start,new_schedule_end)
+        # conflicting_time_queryset을 프론트로 보내줘서 새로운 스케줄의 시작과 끝 시간을 선택할 때 시각적으로 표현해줘야함
+
+        # 기존 약속과 충돌하는 새로운 약속일 경우 에러 발생시키기
+        if schedules_in_month_range.filter(schedule_end__gte=new_schedule_start,schedule_start__lte=new_schedule_end).exists():
+            raise ValidationError("기존 약속과 충돌하는 새로운 약속입니다.")
+            
+        data = {
+            "schedule_start": new_schedule_start,
+            "schedule_end": new_schedule_end,
+        }
+
+        return ScheduleService.update_schedule(pk, user, data)
+    
+    # schedule update와 create에서 start < end 검증 로직 있는지 확인하기 
