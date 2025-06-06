@@ -13,19 +13,19 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
-from .schedule_service import ScheduleService
+from .schedule_service import *
 
 """pk값이 필요하지 않은 뷰입니다. => 스케줄 생성, 전체 조회"""
 class ScheduleListCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        data = ScheduleService.list_schedules(request.user)
+        data = ScheduleQueryService.list_schedules(request.user)
         return Response(data)
 
     def post(self, request):
         try:
-            data = ScheduleService.create_schedule(request.data, request.user)
+            data = ScheduleCommandService.create_schedule(request.data, request.user)
             return Response(data, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -36,21 +36,21 @@ class ScheduleDetailView(APIView):
 
     def get(self, request, pk):
         try:
-            data = ScheduleService.get_schedule(pk, request.user)
+            data = ScheduleQueryService.get_schedule(pk, request.user)
             return Response(data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_404_NOT_FOUND)
 
     def patch(self, request, pk):
         try:
-            data = ScheduleService.update_schedule(pk, request.user, request.data)
+            data = ScheduleCommandService.update_schedule(pk, request.user, request.data)
             return Response(data, status=status.HTTP_206_PARTIAL_CONTENT)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
         try:
-            ScheduleService.delete_schedule(pk, request.user)
+            ScheduleCommandService.delete_schedule(pk, request.user)
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_404_NOT_FOUND)
@@ -61,7 +61,7 @@ class ScheduleSelectAvailableTimeView(APIView):
             start = request.data.get("schedule_start")
             end = request.data.get("schedule_end")
             # 날짜 형식 파싱 필요 시 추가
-            data = ScheduleService.select_available_time(pk, request.user, start, end)
+            data = ScheduleTimeService.select_available_time(pk, request.user, start, end)
             return Response(data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

@@ -17,24 +17,13 @@ from itertools import chain
 from rest_framework.exceptions import ValidationError
 from django.db.models import Q
 
-class ScheduleService:
-    @staticmethod
-    def list_schedules(user):
-        schedules = Schedules.objects.filter(created_by=user)
-        return ScheduleSerializer(schedules, many=True).data
-
+class ScheduleCommandService:
     @staticmethod
     def create_schedule(data, user):
         serializer = ScheduleSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save(created_by=user)
         return serializer.data
-
-    @staticmethod
-    def get_schedule(pk, user):
-        schedule = get_object_or_404(Schedules, pk=pk, created_by=user)
-        return ScheduleSerializer(schedule).data
-
     @staticmethod
     def update_schedule(pk, user, data):
         schedule = get_object_or_404(Schedules, pk=pk, created_by=user)
@@ -42,11 +31,23 @@ class ScheduleService:
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return serializer.data
-
     @staticmethod
     def delete_schedule(pk, user):
         schedule = get_object_or_404(Schedules, pk=pk, created_by=user)
         schedule.delete()
+    
+    
+class ScheduleQueryService:
+    @staticmethod
+    def list_schedules(user):
+        schedules = Schedules.objects.filter(created_by=user)
+        return ScheduleSerializer(schedules, many=True).data
+    
+
+    @staticmethod
+    def get_schedule(pk, user):
+        schedule = get_object_or_404(Schedules, pk=pk, created_by=user)
+        return ScheduleSerializer(schedule).data   
 
     # participant = host + guest
     # (호스트의 id + 게스트들의 id) 추출
@@ -57,14 +58,14 @@ class ScheduleService:
         if user.id != target_schedule.created_by.id: # user.id가 pk로 찾은 스케줄의 생성자 id와 일치하는지 확인하는 로직
             raise PermissionDenied("해당 스케줄에 대한 권한이 없습니다.")
 
-        guest_id_list = list(Participants.objects.filter(schedule=target_schedule).values_list("participants_id", flat=True).distinct())
+        guest_id_list = list(Participants.objects.filter(schedule=target_schedule).values_list("participant_id", flat=True).distinct())
         participant_id_list = guest_id_list + [user.id]
 
         return participant_id_list
 
     @staticmethod
     def get_related_schedule_ids_by_user_ids(pk, user):
-        participant_id_list = ScheduleService.get_participant_user_ids(pk, user)
+        participant_id_list = ScheduleQueryService.get_participant_user_ids(pk, user)
 
         # 스케줄 참여자로 스케줄 찾기
         # (호스트의 id + 게스트들의 id)로 participants 테이블에서 스케줄 id 추출(중복제거)
@@ -84,8 +85,9 @@ class ScheduleService:
         return combined_schedule_ids
 
     # 스케줄 id로 스케줄 테이블에서 해당하는 달에 속해있는 약속들 찾기
+    @staticmethod
     def get_schedules_in_month_range(pk, user,new_schedule_start,new_schedule_end):        
-        related_schedule_id_set = ScheduleService.get_related_schedule_ids_by_user_ids(pk,user)
+        related_schedule_id_set = ScheduleQueryService.get_related_schedule_ids_by_user_ids(pk,user)
 
         new_schedule_start_month = new_schedule_start.month
         new_schedule_end_month = new_schedule_end.month
@@ -95,7 +97,9 @@ class ScheduleService:
         
         return schedules_in_month_range
     
+class ScheduleTimeService:
     # 모두가 가능한 시간대 고르기
+    @staticmethod
     def select_available_time(pk, user,new_schedule_start,new_schedule_end):
         serializer = ScheduleSerializer(data={"schedule_start": new_schedule_start, "schedule_end": new_schedule_end}, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -103,7 +107,7 @@ class ScheduleService:
         new_schedule_start = serializer.validated_data["schedule_start"]
         new_schedule_end = serializer.validated_data["schedule_end"]
 
-        schedules_in_month_range = ScheduleService.get_schedules_in_month_range(pk, user,new_schedule_start,new_schedule_end)
+        schedules_in_month_range = ScheduleQueryService.get_schedules_in_month_range(pk, user,new_schedule_start,new_schedule_end)
         # conflicting_time_queryset을 프론트로 보내줘서 새로운 스케줄의 시작과 끝 시간을 선택할 때 시각적으로 표현해줘야함
 
         # 기존 약속과 충돌하는 새로운 약속일 경우 에러 발생시키기
@@ -115,6 +119,4 @@ class ScheduleService:
             "schedule_end": new_schedule_end,
         }
 
-        return ScheduleService.update_schedule(pk, user, data)
-    
-    # schedule update와 create에서 start < end 검증 로직 있는지 확인하기 
+        return ScheduleCommandService.update_schedule(pk, user, data)

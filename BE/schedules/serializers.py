@@ -15,7 +15,7 @@ class ScheduleSerializer(serializers.ModelSerializer):
             'is_meal',
             'schedule_condition'
         ]
-        
+        read_only_fields = ('created_by',)
     def validate(self, data):
         schedule_start = data.get("schedule_start", getattr(self.instance, "schedule_start", None))
         schedule_end = data.get("schedule_end", getattr(self.instance, "schedule_end", None))

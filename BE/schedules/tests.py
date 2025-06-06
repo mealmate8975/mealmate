@@ -3,11 +3,15 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from restaurants.models import Restaurant
 from schedules.models import Schedules
-from .schedule_service import ScheduleService
+from schedules.schedule_service import (
+    ScheduleCommandService,
+    ScheduleQueryService,
+    ScheduleTimeService,
+)
 from django.urls import reverse
 from django.utils import timezone
-from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient
+from rest_framework.exceptions import ValidationError
 
 User = get_user_model()
 
@@ -88,7 +92,7 @@ class ScheduleServiceTests(TestCase):
             nickname="testnick",
             gender="0"
         )
-        self.client.force_authenticate(user=self.user)  # 인증된 사용자 설정 추가
+        self.client.force_authenticate(user=self.user)
         self.restaurant = Restaurant.objects.create(
             rest_name="Test Restaurant",
             rest_address="Test Address",
@@ -103,37 +107,61 @@ class ScheduleServiceTests(TestCase):
             "schedule_condition": {"weather": "sunny"},
         }
 
+    # ScheduleCommandService tests
     def test_create_schedule_success(self):
-        created = ScheduleService.create_schedule(self.schedule_data, self.user)
+        created = ScheduleCommandService.create_schedule(self.schedule_data, self.user)
         self.assertEqual(created["schedule_name"], self.schedule_data["schedule_name"])
         self.assertEqual(created["rest_id"], self.restaurant.rest_id)
         self.assertEqual(created["created_by"], self.user.id)
 
+    def test_update_schedule_success(self):
+        created = ScheduleCommandService.create_schedule(self.schedule_data, self.user)
+        updated_data = {"schedule_name": "Updated Name"}
+        updated = ScheduleCommandService.update_schedule(created["schedule_id"], self.user, updated_data)
+        self.assertEqual(updated["schedule_name"], "Updated Name")
+
+    def test_delete_schedule_success(self):
+        created = ScheduleCommandService.create_schedule(self.schedule_data, self.user)
+        ScheduleCommandService.delete_schedule(created["schedule_id"], self.user)
+        with self.assertRaises(Exception):
+            ScheduleQueryService.get_schedule(created["schedule_id"], self.user)
+
+    # ScheduleQueryService tests
     def test_list_schedules(self):
-        ScheduleService.create_schedule(self.schedule_data, self.user)
-        schedules = ScheduleService.list_schedules(self.user)
+        ScheduleCommandService.create_schedule(self.schedule_data, self.user)
+        schedules = ScheduleQueryService.list_schedules(self.user)
         self.assertTrue(len(schedules) >= 1)
         self.assertEqual(schedules[0]["created_by"], self.user.id)
 
     def test_get_schedule_success(self):
-        created = ScheduleService.create_schedule(self.schedule_data, self.user)
-        schedule = ScheduleService.get_schedule(created["schedule_id"], self.user)
+        created = ScheduleCommandService.create_schedule(self.schedule_data, self.user)
+        schedule = ScheduleQueryService.get_schedule(created["schedule_id"], self.user)
         self.assertEqual(schedule["schedule_name"], self.schedule_data["schedule_name"])
 
-    def test_update_schedule_success(self):
-        created = ScheduleService.create_schedule(self.schedule_data, self.user)
-        updated_data = {"schedule_name": "Updated Name"}
-        updated = ScheduleService.update_schedule(created["schedule_id"], self.user, updated_data)
-        self.assertEqual(updated["schedule_name"], "Updated Name")
+    # ScheduleTimeService tests
+    def test_select_available_time_success(self):
+        created = ScheduleCommandService.create_schedule(self.schedule_data, self.user)
 
-    def test_delete_schedule_success(self):
-        created = ScheduleService.create_schedule(self.schedule_data, self.user)
-        ScheduleService.delete_schedule(created["schedule_id"], self.user)
-        with self.assertRaises(Exception):
-            ScheduleService.get_schedule(created["schedule_id"], self.user)
-    
+        start = timezone.localtime(timezone.now() + timezone.timedelta(days=5))
+        end = timezone.localtime(timezone.now() + timezone.timedelta(days=5, hours=2))
+
+        start_iso = start.isoformat()
+        end_iso = end.isoformat()
+        
+        updated = ScheduleTimeService.select_available_time(created["schedule_id"], self.user, start_iso, end_iso)
+        self.assertEqual(updated["schedule_start"], start_iso)
+        self.assertEqual(updated["schedule_end"], end_iso)
+
+    def test_select_available_time_conflict(self):
+        created = ScheduleCommandService.create_schedule(self.schedule_data, self.user)
+        # Trying to select a time that conflicts with existing schedule
+        start = self.schedule_data["schedule_start"].isoformat()
+        end = self.schedule_data["schedule_end"].isoformat()
+        with self.assertRaises(ValidationError):
+            ScheduleTimeService.select_available_time(created["schedule_id"], self.user, start, end)
+
     def test_create_schedule_with_minimal_fields(self):
         url = reverse("schedules:schedule-list-create")
         self.client.force_authenticate(user=self.user)
-        response = self.client.post(url, {"created_by" : self.user.id}, format="json")
+        response = self.client.post(url, {"created_by": self.user.id}, format="json")
         self.assertEqual(response.status_code, 201)
