@@ -11,7 +11,10 @@ class Participants(models.Model):
     )
     participant = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete= models.SET_NULL,
-        null=True,
-        blank=True
+        # on_delete= models.SET_NULL,
+        on_delete= models.CASCADE,
+        default=None,
+        # null=True,
+        # blank=True
+
     )

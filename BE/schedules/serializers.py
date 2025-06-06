@@ -15,6 +15,14 @@ class ScheduleSerializer(serializers.ModelSerializer):
             'is_meal',
             'schedule_condition'
         ]
+        
+    def validate(self, data):
+        schedule_start = data.get("schedule_start", getattr(self.instance, "schedule_start", None))
+        schedule_end = data.get("schedule_end", getattr(self.instance, "schedule_end", None))
 
-        # 서버가 자동으로 할당합니다. 뷰에서 request.user로 해놔서 자동으로 로그인한 유저가 생성자가 됩니다.
-        read_only_fields = ['created_by']
+        # 둘 다 존재하는 경우에만 순서 비교
+        if schedule_start is not None and schedule_end is not None:
+            if schedule_end < schedule_start:
+                raise serializers.ValidationError("종료 시간이 시작 시간보다 빠를 수 없습니다.")
+
+        return data

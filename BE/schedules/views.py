@@ -54,3 +54,14 @@ class ScheduleDetailView(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_404_NOT_FOUND)
+        
+class ScheduleSelectAvailableTimeView(APIView):
+    def post(self, request, pk):
+        try:
+            start = request.data.get("schedule_start")
+            end = request.data.get("schedule_end")
+            # 날짜 형식 파싱 필요 시 추가
+            data = ScheduleService.select_available_time(pk, request.user, start, end)
+            return Response(data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
