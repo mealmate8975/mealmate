@@ -79,6 +79,19 @@ class ScheduleAPITestCase(APITestCase):
         response = self.client.delete(url)
         self.assertEqual(response.status_code, 204)
         self.assertFalse(Schedules.objects.filter(schedule_id=self.schedule.schedule_id).exists())
+    
+    def test_get_available_times(self):
+        url = reverse("schedules:schedule-available-times", args=[self.schedule.schedule_id])
+        
+        # 해당 달 전체 범위 지정
+        start_date = (timezone.now().replace(day=1)).isoformat()
+        end_date = (timezone.now() + timezone.timedelta(days=30)).isoformat()
+
+        response = self.client.get(url, {"start": start_date, "end": end_date})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("schedules", response.data)
+        self.assertTrue(any(s["schedule_id"] == self.schedule.schedule_id for s in response.data["schedules"]))
 
 
 ### 2. 서비스 계층 단위 테스트 ###
@@ -107,7 +120,7 @@ class ScheduleServiceTests(TestCase):
             "schedule_condition": {"weather": "sunny"},
         }
 
-    # ScheduleCommandService tests
+    # ScheduleCommandService 테스트
     def test_create_schedule_success(self):
         created = ScheduleCommandService.create_schedule(self.schedule_data, self.user)
         self.assertEqual(created["schedule_name"], self.schedule_data["schedule_name"])
@@ -126,7 +139,7 @@ class ScheduleServiceTests(TestCase):
         with self.assertRaises(Exception):
             ScheduleQueryService.get_schedule(created["schedule_id"], self.user)
 
-    # ScheduleQueryService tests
+    # ScheduleQueryService 테스트
     def test_list_schedules(self):
         ScheduleCommandService.create_schedule(self.schedule_data, self.user)
         schedules = ScheduleQueryService.list_schedules(self.user)
@@ -138,7 +151,7 @@ class ScheduleServiceTests(TestCase):
         schedule = ScheduleQueryService.get_schedule(created["schedule_id"], self.user)
         self.assertEqual(schedule["schedule_name"], self.schedule_data["schedule_name"])
 
-    # ScheduleTimeService tests
+    # ScheduleTimeService 테스트
     def test_select_available_time_success(self):
         created = ScheduleCommandService.create_schedule(self.schedule_data, self.user)
 

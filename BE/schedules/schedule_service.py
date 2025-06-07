@@ -108,7 +108,6 @@ class ScheduleTimeService:
         new_schedule_end = serializer.validated_data["schedule_end"]
 
         schedules_in_month_range = ScheduleQueryService.get_schedules_in_month_range(pk, user,new_schedule_start,new_schedule_end)
-        # conflicting_time_queryset을 프론트로 보내줘서 새로운 스케줄의 시작과 끝 시간을 선택할 때 시각적으로 표현해줘야함
 
         # 기존 약속과 충돌하는 새로운 약속일 경우 에러 발생시키기
         if schedules_in_month_range.filter(schedule_end__gte=new_schedule_start,schedule_start__lte=new_schedule_end).exists():

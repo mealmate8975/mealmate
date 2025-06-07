@@ -14,6 +14,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 from .schedule_service import *
+from django.utils.dateparse import parse_datetime
 
 """pk값이 필요하지 않은 뷰입니다. => 스케줄 생성, 전체 조회"""
 class ScheduleListCreateView(APIView):
@@ -54,8 +55,33 @@ class ScheduleDetailView(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_404_NOT_FOUND)
-        
+
+class ScheduleAvailableTimesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        start = request.query_params.get("start")
+        end = request.query_params.get("end")
+
+        start_dt = parse_datetime(start)
+        end_dt = parse_datetime(end)
+
+        schedules = ScheduleQueryService.get_schedules_in_month_range(pk, request.user, start_dt, end_dt)
+
+        response_data = [
+            {
+                "schedule_id": s.schedule_id,
+                "name": s.schedule_name,
+                "start": s.schedule_start.isoformat(),
+                "end": s.schedule_end.isoformat(),
+            }
+            for s in schedules
+        ]
+        return Response({"schedules": response_data})
+
 class ScheduleSelectAvailableTimeView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, pk):
         try:
             start = request.data.get("schedule_start")
