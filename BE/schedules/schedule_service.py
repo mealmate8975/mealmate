@@ -96,7 +96,7 @@ class ScheduleQueryService:
         schedules_in_month_range = Schedules.objects.filter(schedule_id__in=related_schedule_id_set).filter(Q(schedule_start__month__in=new_schedule_month_range) | Q(schedule_end__month__in=new_schedule_month_range)).distinct()
         
         return schedules_in_month_range
-    
+    # schedules_in_month_range을 프론트로 보내줘서 새로운 스케줄의 시작과 끝 시간을 선택할 때 시각적으로 표현해줘야함
 class ScheduleTimeService:
     # 모두가 가능한 시간대 고르기
     @staticmethod

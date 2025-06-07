@@ -1,17 +1,10 @@
-from rest_framework.test import APITestCase
-from django.test import TestCase
-from django.contrib.auth import get_user_model
 from restaurants.models import Restaurant
-from schedules.models import Schedules
-from schedules.schedule_service import (
-    ScheduleCommandService,
-    ScheduleQueryService,
-    ScheduleTimeService,
-)
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils import timezone
-from rest_framework.test import APIClient
-from rest_framework.exceptions import ValidationError
+
+from rest_framework.test import APITestCase
+from schedules.models import Schedules
 
 User = get_user_model()
 
@@ -92,7 +85,21 @@ class ScheduleAPITestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("schedules", response.data)
         self.assertTrue(any(s["schedule_id"] == self.schedule.schedule_id for s in response.data["schedules"]))
+    
+    def test_create_schedule_with_minimal_fields(self):
+        url = reverse("schedules:schedule-list-create")
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post(url, {"created_by": self.user.id}, format="json")
+        self.assertEqual(response.status_code, 201)
 
+from django.test import TestCase
+from schedules.schedule_service import (
+    ScheduleCommandService,
+    ScheduleQueryService,
+    ScheduleTimeService,
+)
+from rest_framework.test import APIClient
+from rest_framework.exceptions import ValidationError
 
 ### 2. 서비스 계층 단위 테스트 ###
 class ScheduleServiceTests(TestCase):
@@ -172,9 +179,3 @@ class ScheduleServiceTests(TestCase):
         end = self.schedule_data["schedule_end"].isoformat()
         with self.assertRaises(ValidationError):
             ScheduleTimeService.select_available_time(created["schedule_id"], self.user, start, end)
-
-    def test_create_schedule_with_minimal_fields(self):
-        url = reverse("schedules:schedule-list-create")
-        self.client.force_authenticate(user=self.user)
-        response = self.client.post(url, {"created_by": self.user.id}, format="json")
-        self.assertEqual(response.status_code, 201)
