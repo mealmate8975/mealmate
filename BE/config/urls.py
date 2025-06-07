@@ -7,4 +7,5 @@ urlpatterns = [
     # path('accounts/',include('accounts.urls')),
     path('friendships/',include('friendships.urls')),
     path('api/schedules/',include('schedules.urls', namespace="schedules")),
+    paht('api/chatroom/',include('chatroom.urls',namespace="chatroom")),
 ]
