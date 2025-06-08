@@ -2,7 +2,6 @@ from django.db import models
 from django.conf import settings
 from schedules.models import Schedules
 
-# Create your models here.
 class Participants(models.Model):
     schedule = models.ForeignKey(
         Schedules,

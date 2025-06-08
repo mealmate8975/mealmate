@@ -92,6 +92,20 @@ class ScheduleAPITestCase(APITestCase):
         response = self.client.post(url, {"created_by": self.user.id}, format="json")
         self.assertEqual(response.status_code, 201)
 
+    def test_create_schedule_with_chatroom(self):
+        url = reverse("schedules:schedule-list-create")
+        data = {
+            "schedule_name": "채팅 포함 스케줄",
+            "rest_id": self.restaurant.rest_id,
+            "schedule_start": (timezone.now() + timezone.timedelta(days=3)).isoformat(),
+            "schedule_end": (timezone.now() + timezone.timedelta(days=3, hours=2)).isoformat(),
+            "is_meal": True,
+            "with_chatroom": True
+        }
+        response = self.client.post(url, data, format="json")
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(response.data["with_chatroom"])
+
 from django.test import TestCase
 from schedules.schedule_service import (
     ScheduleCommandService,

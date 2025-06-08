@@ -16,14 +16,21 @@ from rest_framework.exceptions import PermissionDenied
 from itertools import chain
 from rest_framework.exceptions import ValidationError
 from django.db.models import Q
+from chatroom.models import ChatRoom
 
 class ScheduleCommandService:
     @staticmethod
     def create_schedule(data, user):
+        with_chatroom = data.get("with_chatroom", False)
+
         serializer = ScheduleSerializer(data=data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(created_by=user)
-        return serializer.data
+        schedule = serializer.save(created_by=user)
+
+        if with_chatroom:
+            ChatRoom.objects.create(schedule=schedule)
+
+        return ScheduleSerializer(schedule).data
     @staticmethod
     def update_schedule(pk, user, data):
         schedule = get_object_or_404(Schedules, pk=pk, created_by=user)
