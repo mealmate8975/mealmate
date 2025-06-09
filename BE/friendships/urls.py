@@ -7,4 +7,5 @@ urlpatterns = [
     path('decline/', DeclineFriendRequestView.as_view(), name='decline-friend-request'),
     path('cancle/', CancelFriendRequestView.as_view(), name='cancel-friend-request'),
     path('delete/', DeleteFriendView.as_view(), name='delete-friendship'),
+    path('list/', FriendListView.as_view(), name='friend-list'),
 ]

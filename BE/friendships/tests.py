@@ -219,4 +219,14 @@ class DeleteFriendTest(FriendTestBase):
         self.assertEqual(response.data['message'], '친구 관계가 삭제되었습니다.')
         self.assertFalse(Friendship.objects.filter(from_user=self.user1, to_user=self.user2).exists())
         self.assertFalse(Friendship.objects.filter(from_user=self.user2, to_user=self.user1).exists())
-        
+
+class FriendListViewTest(FriendTestBase):
+    def setUp(self):
+        super().setUp()
+        self.create_friendship(self.user1, self.user2, 'accepted')
+        self.create_friendship(self.user2, self.user1, 'accepted')
+
+    def test_get_friend_list(self):
+        url = reverse('friend-list')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
