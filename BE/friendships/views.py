@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import permissions
 from .models import Friendship
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 from accounts.models import UserBlock
 
 User = get_user_model()
@@ -226,3 +227,24 @@ class DeleteFriendView(APIView):
 #     pass
 # class BanFriendView(APIView):
 #     pass
+
+# 친구 목록 불러오기
+class FriendListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+        user = request.user
+        friends = Friendship.objects.filter(
+            Q(from_user=user) | Q(to_user=user),
+            status='accepted'
+        )
+
+        if not friends.exists():
+            return Response({'error': '친구 목록이 비어있습니다.'}, status=404)
+
+        to_ids = friends.values_list('to_user_id', flat=True) # 본인이 친구로 추가한 사람
+        from_ids = friends.values_list('from_user_id', flat=True) # 본인을 친구로 추가한 사람
+        friend_ids = list(set(to_ids) | set(from_ids)) # 친구 목록 중복 제거
+
+        users = User.objects.filter(id__in=friend_ids).values('id', 'email', 'nickname')
+        return Response({'friends': list(users)}, status=200)
