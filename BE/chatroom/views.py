@@ -1,7 +1,7 @@
 '''
 SOLID 원칙을 적용한 Django REST Framework에서의 대표적인 코드 구성 방식
 
-chatromm_service.py
+chatroom_service.py
 실제 비즈니스 로직을 수행하는 서비스 계층
 
 views.py

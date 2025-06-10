@@ -1,6 +1,7 @@
 from pathlib import Path
 from dotenv import load_dotenv # dotenv 라이브러리 임포트
 import os
+# from pymongo import MongoClient
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -128,3 +129,12 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOW_ALL_ORIGINS = True
+
+'''
+몽고DB
+'''
+
+# MONGO_DB_NAME = 'chatroom'
+# MONGO_DB_URI = os.getenv("MONGO_DB_URI")  # .env에 추가
+# mongo_client = MongoClient(MONGO_DB_URI)
+# mongo_db = mongo_client[MONGO_DB_NAME]
