@@ -1,7 +1,8 @@
 from pathlib import Path
 from dotenv import load_dotenv # dotenv 라이브러리 임포트
 import os
-# from pymongo import MongoClient
+from pymongo import MongoClient
+from pymongo.server_api import ServerApi
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -130,11 +131,15 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-'''
-몽고DB
-'''
+# MongoDB Atlas 세팅
+MONGO_DB_URI  = os.getenv("MONGO_DB_URI")
+MONGO_DB_NAME = os.getenv("MONGO_DB_NAME")
 
-# MONGO_DB_NAME = 'chatroom'
-# MONGO_DB_URI = os.getenv("MONGO_DB_URI")  # .env에 추가
-# mongo_client = MongoClient(MONGO_DB_URI)
-# mongo_db = mongo_client[MONGO_DB_NAME]
+# 실제 커넥션 생성
+MONGO_CLIENT = MongoClient(MONGO_DB_URI, server_api=ServerApi('1'))
+MONGO_DB     = MONGO_CLIENT[MONGO_DB_NAME]
+
+# 채팅용 컬렉션 이름 할당
+MESSAGES_COLLECTION = MONGO_DB["messages"]
+ATTACHMENTS_COLLECTION = MONGO_DB["attachments"]
+REACTIONS_COLLECTION = MONGO_DB["reactions"]

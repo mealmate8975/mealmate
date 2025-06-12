@@ -1,7 +1,6 @@
 from django.db import models
 from schedules.models import Schedules
 from django.conf import settings
-from .models import ChatRoom
 
 class ChatRoom(models.Model):
     schedule = models.OneToOneField(Schedules, on_delete=models.CASCADE, related_name="chatroom")

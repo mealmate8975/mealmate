@@ -12,18 +12,12 @@ from django.shortcuts import render
 # from accounts.models import CustomUser
 from friendships.models import Friendship
 
-'''
-호스트와 게스트는 모두 초대 가능
-단, 게스트는 호스트의 승인 있을 경우에만 초대 가능
-'''
-
-'''
-Invitation 모델 생성 필요
-'''
-
-class ChatRoomService:
-    
+class ChatRoomInvitationService:
+    '''
+    호스트와 게스트 모두 채팅방에 친구를 초대할 수 있음 (단, 게스트는 호스트의 승인 있을 경우에만 초대 가능)
+    '''
     def invite_friends_for_host(chatroom_id,host,data):
+        
         """
         호스트가 친구를 채팅방에 초대합니다.
 
@@ -33,7 +27,7 @@ class ChatRoomService:
     
     def invite_friends_for_guest(chatroom_id,guest,data):
         """
-        게스트가 친구를 채팅방에 초대하고 호스트의 승인을 기다립니다.
+        게스트가 자신의 친구에게 초대를 보내기 위해서 호스트의 승인을 기다립니다. 
         
         이미 초대된 친구인지 확인하는 로직 필요
         """
@@ -41,12 +35,15 @@ class ChatRoomService:
 
     def approve_invitation():
         """
-        호스트가 게스트의 친구 초대를 허락합니다.
+        호스트가 게스트의 친구 초대를 허락하고 초대가 게스트의 친구에게 전달됩니다.
         """
-        pass
+        pass    
     
-    def accept_invitation(chatroom_id,friend):
+    def accept_invitation(chatroom_id):
         """
         초대 받은 친구가 초대를 수락합니다.
+
+        초대를 수락하면
+        participants 테이블과 chatroomparticipant 테이블에 id 추가
         """
         pass
