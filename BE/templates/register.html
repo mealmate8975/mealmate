@@ -33,6 +33,15 @@
             <div class="cut cut-short"></div>
             <label class="iLabel" for="nickname">Nickname</label>
         </div>
+        <div class="input-container ic2">
+            <select class="input" id="gender">
+                <option value="">성별 선택</option>
+                <option value="0">남성</option>
+                <option value="1">여성</option>
+            </select>
+            <div class="cut cut-short"></div>
+            <label class="iLabel" for="gender">Gender</label>
+        </div>
 
         <button class="submit" type="submit">submit</button>
         </div>
@@ -53,15 +62,20 @@
         const name = document.querySelector('#name').value;
         const nickname = document.querySelector('#nickname').value;
         const phonenumber = document.querySelector('#phonenumber').value;
+        let gender = document.querySelector('#gender').value;
 
-        console.log("Sending data:", { email, password, name, phone: phonenumber });
+        // 문자열로 강제 변환 (핵심 수정 부분)
+        gender = String(gender);
+
+        console.log("Sending data:", { email, password, name, phone: phonenumber, nickname, gender });
 
         axios.post("{% url 'accounts:register' %}", {
         email,
         password,
         name,
         phone: phonenumber,
-        nickname
+        nickname,
+        gender
         }, {
         headers: {
             'Content-Type': 'application/json'

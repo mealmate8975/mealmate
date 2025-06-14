@@ -24,6 +24,7 @@ class RegisterSerializer(serializers.Serializer):
     password = serializers.CharField(write_only = True)
     phone = serializers.CharField(required=False)
     nickname = serializers.CharField()
+    gender = serializers.ChoiceField(choices=[('0', 'Male'), ('1', 'Female')])
 
     def validate(self, data):
         email = data.get('email')
