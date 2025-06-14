@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     'participants',
     'schedules',
     'chatroom',
-    'channels'
+    'channels',
+    'rest_framework_simplejwt',
 ]
 
 MIDDLEWARE = [
@@ -162,5 +163,8 @@ AUTHENTICATION_BACKENDS = [
 REST_FRAMEWORK = {
     'DEFAULT_PARSER_CLASSES': [
         'rest_framework.parsers.JSONParser',
-    ]
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
 }

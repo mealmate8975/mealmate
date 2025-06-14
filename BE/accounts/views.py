@@ -10,8 +10,26 @@ from .models import CustomUser
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views import View
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .serializers import MyTokenObtainPairSerializer
 
 User = get_user_model()
+
+
+class MyTokenObtainPairView(TokenObtainPairView):
+    serializer_class = MyTokenObtainPairSerializer
+
+class UserMeView(APIView):
+    permission_classes = [IsAuthenticated]  # JWT 토큰 필요
+
+    def get(self, request):
+        user = request.user  # JWT 토큰에서 복원된 유저
+        return Response({
+            "email": user.email,
+            "nickname": user.nickname,
+            "name": user.name,
+        })
 
 class LoginPageView(View):
     def get(self, request):
