@@ -31,7 +31,7 @@
         const email = form.querySelector('input[name="email"]').value;
         const password = form.querySelector('input[name="password"]').value;
 
-        axios.post("{% url 'accounts:login' %}", {
+        axios.post("/api/accounts/login/", {
             email: email,
             password: password
         }, {

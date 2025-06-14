@@ -10,7 +10,7 @@ class LoginSerializer(serializers.Serializer):
     def validate(self, data):
         user = authenticate(
             request = self.context.get('request'),
-            email = data.get("email"),  
+            username = data.get("email"),  
             password = data.get("password")
         )
         if not user:
