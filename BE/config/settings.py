@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'participants',
     'schedules',
     'chatroom',
+    'channels'
 ]
 
 MIDDLEWARE = [
@@ -143,3 +144,13 @@ MONGO_DB     = MONGO_CLIENT[MONGO_DB_NAME]
 MESSAGES_COLLECTION = MONGO_DB["messages"]
 ATTACHMENTS_COLLECTION = MONGO_DB["attachments"]
 REACTIONS_COLLECTION = MONGO_DB["reactions"]
+
+# Channels 설정
+ASGI_APPLICATION = 'config.asgi.application'
+
+# Redis 없이 InMemoryChannelLayer 사용
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}

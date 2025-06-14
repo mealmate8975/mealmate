@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
+from django.shortcuts import render
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -8,4 +9,5 @@ urlpatterns = [
     path('friendships/',include('friendships.urls')),
     path('api/schedules/',include('schedules.urls', namespace="schedules")),
     path('api/chatroom/',include('chatroom.urls',namespace="chatroom")),
+    path('chat-test/', lambda request: render(request, 'chat_test.html')),
 ]
