@@ -18,7 +18,7 @@
     </form>
 </div>
 
-<!-- ✅ axios CDN 추가 -->
+<!-- axios CDN 추가 -->
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
 <!-- 버튼 누르면 백엔드에 보내는 비동기처리입니다.(axios) -->
@@ -45,6 +45,9 @@
             localStorage.setItem('refresh', response.data.refresh);
 
             alert("로그인 성공");
+
+            // 리다이렉트 추가
+            window.location.href = "/chat-test/";
         })
         .catch(error => {
             console.error('로그인 실패:', error.response?.data || error);

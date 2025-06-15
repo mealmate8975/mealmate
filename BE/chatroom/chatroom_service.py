@@ -9,8 +9,23 @@ views.py
 '''
 
 from django.shortcuts import render
-# from accounts.models import CustomUser
 from friendships.models import Friendship
+from .models import ChatRoom, ChatParticipant
+
+class ChatRoomService:
+    @staticmethod
+    def check_participant(chatroom_id, user):
+        """
+        해당 채팅방에 사용자가 참가자인지 확인
+        """
+        try:
+            chatroom = ChatRoom.objects.get(id=chatroom_id)
+        except ChatRoom.DoesNotExist:
+            return {'exists': False, 'is_participant': False}
+
+        is_participant = ChatParticipant.objects.filter(chatroom=chatroom, user=user).exists()
+
+        return {'exists': True, 'is_participant': is_participant}
 
 class ChatRoomInvitationService:
     '''

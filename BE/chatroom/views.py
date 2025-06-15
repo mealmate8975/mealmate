@@ -8,6 +8,23 @@ views.py
 클라이언트의 HTTP 요청을 받고, 인증과 응답 처리만 담당하는 컨트롤러 역할의 뷰 레이어
 '''
 
-from django.shortcuts import render
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
 
+from .chatroom_service import ChatRoomService
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def check_participant_view(request, chatroom_id):
+    user = request.user
+    result = ChatRoomService.check_participant(chatroom_id, user)
+
+    if not result['exists']:
+        return Response({'error': 'ChatRoom not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if result['is_participant']:
+        return Response({'allowed': True})
+    else:
+        return Response({'allowed': False}, status=status.HTTP_403_FORBIDDEN)

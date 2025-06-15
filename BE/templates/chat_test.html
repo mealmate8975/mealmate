@@ -7,6 +7,11 @@
 <body>
     <h1>채팅방 테스트</h1>
 
+    <!-- 로그아웃 버튼 추가 -->
+    <div style="text-align: right; margin-bottom: 10px;">
+        <button onclick="logout()">로그아웃</button>
+    </div>
+
     <div>
         <label>채팅방 이름:</label>
         <input id="roomNameInput" type="text" value="testroom">
@@ -30,7 +35,8 @@
             }
 
             const roomName = document.getElementById("roomNameInput").value;
-            socket = new WebSocket("ws://" + window.location.host + "/ws/chat/" + roomName + "/");
+            const token = localStorage.getItem('access');
+            socket = new WebSocket("ws://" + window.location.host + `/ws/chat/${roomName}/?token=${token}`);
 
             socket.onopen = function(e) {
                 console.log("WebSocket 연결됨");
@@ -66,6 +72,14 @@
 
             messageInput.value = '';
         }
+
+        function logout() {
+            localStorage.removeItem('access');
+            localStorage.removeItem('refresh');
+            alert("로그아웃 되었습니다.");
+            window.location.href = "/api/accounts/login-page/";
+        }
+
     </script>
 
     <!--  여기에 axios CDN 추가 -->

@@ -2,16 +2,28 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
+from channels.db import database_sync_to_async
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        from .models import ChatRoom  # <- 여기 지연 import 유지
+        from .models import ChatRoom, ChatParticipant  # 지연 import
+        from django.utils.functional import LazyObject
 
         self.room_id = self.scope['url_route']['kwargs']['room_id']
+        user = self.scope['user']
+
+        # LazyObject 풀어주기
+        if isinstance(user, LazyObject):
+            user = user._wrapped
 
         try:
             self.chatroom = await self.get_chatroom(self.room_id)
         except ObjectDoesNotExist:
+            await self.close()
+            return
+
+        is_participant = await self.is_user_participant(user, self.chatroom)
+        if not is_participant:
             await self.close()
             return
 
@@ -23,7 +35,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
 
         await self.accept()
-
         await self.send_chat_history()
 
     async def disconnect(self, close_code):
@@ -54,9 +65,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'sender': event['sender'],
         }))
 
-    async def get_chatroom(self, room_id):
-        from .models import ChatRoom  # <-- 여기에도 지연 import
-        return await ChatRoom.objects.aget(id=room_id)
+    @database_sync_to_async
+    def get_chatroom(self, room_id):
+        from .models import ChatRoom
+        return ChatRoom.objects.get(id=room_id)
+
+    @database_sync_to_async
+    def is_user_participant(self, user, chatroom):
+        from .models import ChatParticipant
+        return ChatParticipant.objects.filter(chatroom=chatroom, user=user).exists()
 
     def save_message_to_mongo(self, room_id, sender, message):
         collection = settings.MESSAGES_COLLECTION
