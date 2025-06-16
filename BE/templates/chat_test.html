@@ -21,13 +21,13 @@
     <div id="chat" style="display:none;">
         <h2>채팅</h2>
         <div id="messages" style="border:1px solid #000; height:300px; overflow-y:scroll;"></div>
-        <input id="senderInput" type="text" placeholder="보내는 사람" value="user1">
         <input id="messageInput" type="text" placeholder="메시지">
         <button onclick="sendMessage()">보내기</button>
     </div>
 
     <script>
         let socket = null;
+        let currentUserNickname = null;  // 현재 로그인한 사용자 닉네임 저장
 
         function connect() {
             if (socket) {
@@ -61,13 +61,16 @@
 
         function sendMessage() {
             const messageInput = document.getElementById("messageInput");
-            const senderInput = document.getElementById("senderInput");
             const message = messageInput.value;
-            const sender = senderInput.value;
+
+            if (!currentUserNickname) {
+                alert("유저 정보를 불러오지 못했습니다.");
+                return;
+            }
 
             socket.send(JSON.stringify({
                 'message': message,
-                'sender': sender
+                'sender': currentUserNickname
             }));
 
             messageInput.value = '';
@@ -79,7 +82,6 @@
             alert("로그아웃 되었습니다.");
             window.location.href = "/api/accounts/login-page/";
         }
-
     </script>
 
     <!--  여기에 axios CDN 추가 -->
@@ -102,6 +104,8 @@
             axios.get("/api/accounts/me/")
             .then(response => {
                 const data = response.data;
+                currentUserNickname = data.nickname;  // 닉네임 저장
+
                 const userInfo = document.createElement('div');
                 userInfo.innerText = `안녕하세요 ${data.nickname}님 (이메일: ${data.email})`;
                 document.body.insertBefore(userInfo, document.body.firstChild);
