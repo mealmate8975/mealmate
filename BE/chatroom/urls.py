@@ -1,8 +1,16 @@
 from django.urls import path
-from .views import check_participant_view
+from .views import (
+    CheckParticipantView,
+    ConfirmedChatRoomsView,
+    UnconfirmedChatRoomsView,
+    UserSchedulesView,
+)
 
 app_name = "chatroom"
 
 urlpatterns = [
-    path('chatrooms/<int:chatroom_id>/check-participant/', check_participant_view),
+    path('chatrooms/<int:chatroom_id>/check-participant/', CheckParticipantView.as_view(), name='check_participant'),
+    path('chatrooms/confirmed/', ConfirmedChatRoomsView.as_view(), name='confirmed_chatrooms'),
+    path('chatrooms/unconfirmed/', UnconfirmedChatRoomsView.as_view(), name='unconfirmed_chatrooms'),
+    path('chatrooms/schedules/', UserSchedulesView.as_view(), name='user_schedules'),
 ]

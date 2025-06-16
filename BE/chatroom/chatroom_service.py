@@ -9,9 +9,41 @@ views.py
 '''
 
 from django.shortcuts import render
-from friendships.models import Friendship
 from .models import ChatRoom, ChatParticipant
+from schedules.models import Schedules
 
+# from friendships.models import Friendship
+
+class ChatRoomQueryService:
+    @staticmethod
+    def get_user_schedules(user):
+        '''
+        로그인한 유저가 속해있는 채팅방에 대응되는 스케줄 찾기
+        '''
+        chatroom_ids = ChatParticipant.objects.filter(user=user).values_list('chatroom', flat=True)
+        schedule_queryset = Schedules.objects.filter(schedule_id__in=chatroom_ids)
+        return schedule_queryset
+
+    @staticmethod
+    def get_confirmed_chatrooms(user):
+        '''
+        확정된 시작 시간을 가진 채팅방
+        '''
+        schedule_queryset = ChatRoomQueryService.get_user_schedules(user)
+        confirmed_schedule_ids = schedule_queryset.filter(schedule_start__isnull=False).values_list('schedule_id', flat=True)
+        confirmed_chatrooms = ChatRoom.objects.filter(schedule__schedule_id__in=confirmed_schedule_ids)
+        return confirmed_chatrooms
+
+    @staticmethod
+    def get_unconfirmed_chatrooms(user):
+        '''
+        확정되지 않은 시작 시간을 가진 채팅방
+        '''
+        schedule_queryset = ChatRoomQueryService.get_user_schedules(user)
+        unconfirmed_schedule_ids = schedule_queryset.filter(schedule_start__isnull=True).values_list('schedule_id', flat=True)
+        unconfirmed_chatrooms = ChatRoom.objects.filter(schedule__schedule_id__in=unconfirmed_schedule_ids)
+        return unconfirmed_chatrooms
+    
 class ChatRoomService:
     @staticmethod
     def check_participant(chatroom_id, user):
