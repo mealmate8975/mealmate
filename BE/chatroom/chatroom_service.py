@@ -9,10 +9,10 @@ views.py
 '''
 
 from django.shortcuts import render
-from .models import ChatRoom, ChatParticipant,Invitation
+
+from .models import ChatRoom, ChatParticipant,Invitation,InvitationBlock
 from schedules.models import Schedules
-
-
+from accounts.models import UserBlock
 # from friendships.models import Friendship
 
 class ChatRoomQueryService:
@@ -28,7 +28,7 @@ class ChatRoomQueryService:
     @staticmethod
     def get_confirmed_chatrooms(user):
         '''
-        확정된 시작 시간을 가진 채팅방
+        확정된 시작 시간을 가진 채팅방(현재 진행중인 약속 분리해야함)
         '''
         schedule_queryset = ChatRoomQueryService.get_user_schedules(user)
         confirmed_schedule_ids = schedule_queryset.filter(schedule_start__isnull=False).values_list('schedule_id', flat=True)
@@ -64,20 +64,40 @@ class ChatRoomInvitationService:
     '''
     호스트와 게스트 모두 채팅방에 친구를 초대할 수 있음 (단, 게스트는 호스트의 승인 있을 경우에만 초대 가능)
     '''
-    def check_invitable_state(chatroom_id,inviter_id,target_id):
+    @staticmethod
+    def check_invitable_state(chatroom_id,inviter_id,target_user_id):
         '''
         초대 가능한 상태인지 확인하는 로직
 
         초대 불가한 경우
         1. target user가 채팅방에 대한 초대 차단을 한 경우 -> 초대 차단 테이블 필요
         2. inviter가 target user의 차단 목록에 있는 경우
-        3. status가 pending이거나 accepted인 경우 
+        3. 초대가 이미 존재하는 경우 
+            (status가 pending이거나 accepted인 경우, 
+            채팅방에 해당 유저가 있는지 확인은 invitation 테이블에 accepted 상태 확인으로 대체 가능)
         '''
-        # if Invitation.objects.filter(chatroom=chatroom_id,to_user=target_user,status='pending').exists():
-        #     return True
-        # else:
-        #     return False
-        # pass
+        
+        # 1. target user가 채팅방에 대한 초대 차단을 한 경우
+        chatroom_blocked = InvitationBlock.objects.filter(blocking_user=target_user_id,blocked_chatroom=chatroom_id).exists()
+        if chatroom_blocked:
+            return False, "This user has blocked invitations to this chatroom."
+        
+        # 2. inviter가 target user의 차단 목록에 있는 경우
+        inviter_blocked = UserBlock.objects.filter(blocker=target_user_id,blocked_user=inviter_id).exists()
+        if inviter_blocked:
+            return False, "This user has blocked the inviter."
+        
+        # 3. 초대가 이미 존재하는 경우
+        existing_invitation = Invitation.objects.filter(
+        chatroom=chatroom_id,
+        to_user=target_user_id,
+        status__in=['pending', 'accepted']
+        ).exists()
+        if existing_invitation:
+            return False, "User has already been invited."
+        
+        return True, "Invitable"
+        
 
     def invite_friends_for_host(chatroom_id,host,data):
         """
