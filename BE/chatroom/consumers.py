@@ -1,3 +1,10 @@
+'''
+웹소켓 연결에서 요청을 받아 처리하는 핸들러 역할
+
+일반 HTTP 요청에서는 views.py가 요청을 처리하듯이
+웹소켓 요청에서는 consumers.py의 Consumer가 처리
+'''
+
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.conf import settings

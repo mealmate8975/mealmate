@@ -43,6 +43,6 @@ class JWTAuthMiddleware:
         except User.DoesNotExist:
             return AnonymousUser()
 
-# 핵심 추가 부분: 미들웨어 스택 팩토리
+# WebSocket 연결을 처리할 때 사용할 미들웨어 스택을 만들어주는 함수
 def JWTAuthMiddlewareStack(inner):
     return JWTAuthMiddleware(AuthMiddlewareStack(inner))

@@ -9,8 +9,9 @@ views.py
 '''
 
 from django.shortcuts import render
-from .models import ChatRoom, ChatParticipant
+from .models import ChatRoom, ChatParticipant,Invitation
 from schedules.models import Schedules
+
 
 # from friendships.models import Friendship
 
@@ -63,8 +64,22 @@ class ChatRoomInvitationService:
     '''
     호스트와 게스트 모두 채팅방에 친구를 초대할 수 있음 (단, 게스트는 호스트의 승인 있을 경우에만 초대 가능)
     '''
+    def check_invitable_state(chatroom_id,inviter_id,target_id):
+        '''
+        초대 가능한 상태인지 확인하는 로직
+
+        초대 불가한 경우
+        1. target user가 채팅방에 대한 초대 차단을 한 경우 -> 초대 차단 테이블 필요
+        2. inviter가 target user의 차단 목록에 있는 경우
+        3. status가 pending이거나 accepted인 경우 
+        '''
+        # if Invitation.objects.filter(chatroom=chatroom_id,to_user=target_user,status='pending').exists():
+        #     return True
+        # else:
+        #     return False
+        # pass
+
     def invite_friends_for_host(chatroom_id,host,data):
-        
         """
         호스트가 친구를 채팅방에 초대합니다.
 
