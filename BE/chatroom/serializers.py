@@ -1,4 +1,4 @@
-from .models import ChatRoom, ChatParticipant, Invitation
+from .models import ChatRoom, ChatParticipant, Invitation, InvitationBlock
 from rest_framework import serializers
 
 class ChatRoomSerializer(serializers.ModelSerializer):
@@ -21,3 +21,11 @@ class InvitationSerializer(serializers.ModelSerializer):
             'status', 'invited_at', 'updated_at', 'is_active'
         ]
         read_only_fields = ['id', 'invited_at', 'updated_at']
+
+class InvitationBlockSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InvitationBlock
+        fields = [
+            'id','blocking_user','blocked_chatroom'
+        ]
+        read_only_fields = ['id','blocking_user']

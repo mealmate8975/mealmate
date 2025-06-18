@@ -68,3 +68,12 @@ class Invitation(models.Model):
     def __str__(self):
         return f"{self.from_user} → {self.to_user} ({self.status})"
     
+class InvitationBlock(models.Model):
+    blocking_user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
+    blocked_chatroom = models.ForeignKey(ChatRoom,on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('blocking_user', 'blocked_chatroom')
+
+    def __str__(self):
+        return f"{self.blocking_user} blocked chatroom {self.blocked_chatroom.id}"
