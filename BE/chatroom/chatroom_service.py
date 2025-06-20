@@ -9,11 +9,15 @@ views.py
 '''
 
 from django.shortcuts import render
+from django.utils import timezone
+from .serializers import ChatRoomSerializer
 
 from .models import ChatRoom, ChatParticipant,Invitation,InvitationBlock
 from schedules.models import Schedules
 from accounts.models import UserBlock
 # from friendships.models import Friendship
+
+
 
 class ChatRoomQueryService:
     @staticmethod
@@ -24,26 +28,44 @@ class ChatRoomQueryService:
         chatroom_ids = ChatParticipant.objects.filter(user=user).values_list('chatroom', flat=True)
         schedule_queryset = Schedules.objects.filter(schedule_id__in=chatroom_ids)
         return schedule_queryset
+    
+    '''
+    schedule_start의 null 여부로 confirmed_chatrooms와 unconfirmed_chatrooms로 나눈다
+    '''
 
     @staticmethod
-    def get_confirmed_chatrooms(user):
+    def get_time_confirmed_chatrooms(user):
         '''
-        확정된 시작 시간을 가진 채팅방(현재 진행중인 약속 분리해야함)
+        확정된 시작 시간을 가진 채팅방
         '''
         schedule_queryset = ChatRoomQueryService.get_user_schedules(user)
-        confirmed_schedule_ids = schedule_queryset.filter(schedule_start__isnull=False).values_list('schedule_id', flat=True)
-        confirmed_chatrooms = ChatRoom.objects.filter(schedule__schedule_id__in=confirmed_schedule_ids)
-        return confirmed_chatrooms
+        time_confirmed_schedule_ids = schedule_queryset.filter(schedule_start__isnull=False).values_list('schedule_id', flat=True)
+        time_confirmed_chatrooms = ChatRoom.objects.filter(schedule__schedule_id__in=time_confirmed_schedule_ids)
+        return time_confirmed_chatrooms
 
     @staticmethod
-    def get_unconfirmed_chatrooms(user):
+    def get_time_unconfirmed_chatrooms(user):
         '''
         확정되지 않은 시작 시간을 가진 채팅방
         '''
         schedule_queryset = ChatRoomQueryService.get_user_schedules(user)
-        unconfirmed_schedule_ids = schedule_queryset.filter(schedule_start__isnull=True).values_list('schedule_id', flat=True)
-        unconfirmed_chatrooms = ChatRoom.objects.filter(schedule__schedule_id__in=unconfirmed_schedule_ids)
-        return unconfirmed_chatrooms
+        time_unconfirmed_schedule_ids = schedule_queryset.filter(schedule_start__isnull=True).values_list('schedule_id', flat=True)
+        time_unconfirmed_chatrooms = ChatRoom.objects.filter(schedule__schedule_id__in=time_unconfirmed_schedule_ids)
+        return ChatRoomSerializer(time_unconfirmed_chatrooms, many=True).data
+
+    @staticmethod
+    def get_ongoing_chatroom(user):
+        """
+        확정된 시작 시간을 가진 채팅방 중 진행중인 채팅방
+        """
+        time_confirmed_chatrooms = ChatRoomQueryService.get_confirmed_chatrooms(user)
+        ongoing_chatrooms = time_confirmed_chatrooms.filter(schedule_start__lt=timezone.now()).exclude(schedule_end__lte=timezone.now())
+        latest_chatroom = ongoing_chatrooms.order_by('-schedule_start').first()
+        if latest_chatroom:
+            return ChatRoomSerializer(latest_chatroom).data
+        return None
+    
+    # latest_chatroom을 제외한 time_confirmed_chatrooms 반환 메서드 필요
     
 class ChatRoomService:
     @staticmethod
