@@ -65,7 +65,19 @@ class ChatRoomQueryService:
             return ChatRoomSerializer(latest_chatroom).data
         return None
     
-    # latest_chatroom을 제외한 time_confirmed_chatrooms 반환 메서드 필요
+    @staticmethod
+    def get_confirmed_chatrooms_excluding_latest_ongoing(user):
+        """
+        get_time_confirmed_chatrooms - get_ongoing_chatroom
+        """
+        time_confirmed_chatrooms = ChatRoomQueryService.get_confirmed_chatrooms(user)
+        tmp = time_confirmed_chatrooms.filter(schedule_start__lt=timezone.now())
+        ongoing_chatrooms = tmp.exclude(schedule_end__lte=timezone.now())
+        exclude_ongoing_chatrooms = tmp.filter(schedule_end__lte=timezone.now())
+        latest_chatroom = ongoing_chatrooms.order_by('-schedule_start').first()
+        exclude_latest_chatroom = ongoing_chatrooms.order_by('-schedule_start').exclude(pk=latest_chatroom.pk)
+        combined_chatrooms = (exclude_ongoing_chatrooms | exclude_latest_chatroom).distinct()
+        return ChatRoomSerializer(combined_chatrooms).data
     
 class ChatRoomService:
     @staticmethod
