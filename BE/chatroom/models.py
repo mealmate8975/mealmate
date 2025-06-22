@@ -21,12 +21,13 @@ class ChatParticipant(models.Model):
         return f"{self.user.nickname} in chatroom {self.chatroom.id}"
 
 class Invitation(models.Model):
-
+    H_PENDING = 'h_pending'
     PENDING = 'pending'
     ACCEPTED = 'accepted'
     REJECTED = 'rejected'
 
     STATUS_CHOICES = [
+        (H_PENDING,'허락 대기중'),
         (PENDING, '초대 수락 대기중'),
         (ACCEPTED, '초대 수락됨'),
         (REJECTED, '초대 거절됨'),
