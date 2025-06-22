@@ -113,33 +113,38 @@ class ChatRoomInvitationService:
         if inviter_blocked:
             return False, "This user has blocked the inviter."
         
-        # 3. 초대가 이미 존재하는 경우
+        # 3. 이미 보낸 초대가 존재하는 경우
         existing_invitation = Invitation.objects.filter(
         chatroom=chatroom_id,
         to_user=target_user_id,
-        status__in=['pending', 'accepted']
-        ).exists()
+        status='pending').exists()
         if existing_invitation:
             return False, "User has already been invited."
+        
+        # 4. target user가 이미 채팅방에 있는 경우
+        already_in_chatroom = ChatParticipant.objects.filter(pk=chatroom_id,user=target_user_id).exists()
+        if already_in_chatroom:
+            return False, "User is already in chatroom."
         
         return True, "Invitable"
 
     # 초대 불가한 경우
     # 1. target user가 채팅방에 대한 초대 차단을 한 경우
     # 2. inviter가 target user의 차단 목록에 있는 경우
-    # 3. 초대가 이미 존재하는 경우 
-    #     (status가 pending이거나 accepted인 경우, 
-    #     채팅방에 해당 유저가 있는지 확인은 invitation 테이블에 accepted 상태 확인으로 대체 가능
-    #     단, 채팅방에 합류했다가 나가는 유저는 accepted인 상태로 남아있기 때문에
-    #     채팅방을 나갈 때 해당 초대 레코드를 지우는 로직 + 희망 시 채팅방 차단 로직 구현 필요)
+    # 3. 초대가 이미 존재하는 경우 (status가 pending)
+    # 4. 채팅방에 target user가 이미 존재하는 경우
+
+    # 채팅방을 나갈 때 희망 시 채팅방 차단 로직 구현 필요
         
     # 호스트
-    def invite_friends_for_host(chatroom_id,host_id):
+    @staticmethod
+    def invite_friends_for_host(host,target_user_id,chatroom_id):
         """
         호스트가 친구를 채팅방에 초대합니다.
         """
-        Friendship
-        pass
+        Invitable,tmp_str = ChatRoomInvitationService.check_invitable_state(chatroom_id,host.id,target_user_id)
+        if Invitable and Friendship.objects.filter(from_user=host,to_user__id=target_user_id,status='accepted').exists():
+            Invitation.objects.create(chatroom__id=chatroom_id,from_user__id=host,status='pending')
 
     def approve_invitation():
         """
@@ -148,7 +153,7 @@ class ChatRoomInvitationService:
         pass   
     
     # 게스트
-    def invite_friends_for_guest(chatroom_id,guest,data):
+    def invite_friends_for_guest(chatroom_id):
         """
         게스트가 자신의 친구에게 초대를 보내기 위해서 호스트의 승인을 기다립니다. 
         """
