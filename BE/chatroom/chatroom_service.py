@@ -15,7 +15,7 @@ from .serializers import ChatRoomSerializer
 from .models import ChatRoom, ChatParticipant,Invitation,InvitationBlock
 from schedules.models import Schedules
 from accounts.models import UserBlock
-# from friendships.models import Friendship
+from friendships.models import Friendship
 
 
 
@@ -68,7 +68,7 @@ class ChatRoomQueryService:
     @staticmethod
     def get_confirmed_chatrooms_excluding_latest_ongoing(user):
         """
-        get_time_confirmed_chatrooms - get_ongoing_chatroom
+        get_time_confirmed_chatrooms - get_ongoing_chatroom = ?
         """
         time_confirmed_chatrooms = ChatRoomQueryService.get_confirmed_chatrooms(user)
         tmp = time_confirmed_chatrooms.filter(schedule_start__lt=timezone.now())
@@ -94,23 +94,15 @@ class ChatRoomService:
 
         return {'exists': True, 'is_participant': is_participant}
 
+
+# 호스트와 게스트 모두 채팅방에 친구를 초대할 수 있음 
+# (단, 게스트는 호스트의 승인 있을 경우에만 초대 가능)
 class ChatRoomInvitationService:
-    '''
-    호스트와 게스트 모두 채팅방에 친구를 초대할 수 있음 (단, 게스트는 호스트의 승인 있을 경우에만 초대 가능)
-    '''
     @staticmethod
     def check_invitable_state(chatroom_id,inviter_id,target_user_id):
-        '''
+        """
         초대 가능한 상태인지 확인하는 로직
-
-        초대 불가한 경우
-        1. target user가 채팅방에 대한 초대 차단을 한 경우 -> 초대 차단 테이블 필요
-        2. inviter가 target user의 차단 목록에 있는 경우
-        3. 초대가 이미 존재하는 경우 
-            (status가 pending이거나 accepted인 경우, 
-            채팅방에 해당 유저가 있는지 확인은 invitation 테이블에 accepted 상태 확인으로 대체 가능)
-        '''
-        
+        """        
         # 1. target user가 채팅방에 대한 초대 차단을 한 경우
         chatroom_blocked = InvitationBlock.objects.filter(blocking_user=target_user_id,blocked_chatroom=chatroom_id).exists()
         if chatroom_blocked:
@@ -131,30 +123,38 @@ class ChatRoomInvitationService:
             return False, "User has already been invited."
         
         return True, "Invitable"
-        
 
-    def invite_friends_for_host(chatroom_id,host,data):
+    # 초대 불가한 경우
+    # 1. target user가 채팅방에 대한 초대 차단을 한 경우
+    # 2. inviter가 target user의 차단 목록에 있는 경우
+    # 3. 초대가 이미 존재하는 경우 
+    #     (status가 pending이거나 accepted인 경우, 
+    #     채팅방에 해당 유저가 있는지 확인은 invitation 테이블에 accepted 상태 확인으로 대체 가능
+    #     단, 채팅방에 합류했다가 나가는 유저는 accepted인 상태로 남아있기 때문에
+    #     채팅방을 나갈 때 해당 초대 레코드를 지우는 로직 + 희망 시 채팅방 차단 로직 구현 필요)
+        
+    # 호스트
+    def invite_friends_for_host(chatroom_id,host_id):
         """
         호스트가 친구를 채팅방에 초대합니다.
-
-        이미 초대된 친구인지 확인하는 로직 필요
         """
-        pass
-    
-    def invite_friends_for_guest(chatroom_id,guest,data):
-        """
-        게스트가 자신의 친구에게 초대를 보내기 위해서 호스트의 승인을 기다립니다. 
-        
-        이미 초대된 친구인지 확인하는 로직 필요
-        """
+        Friendship
         pass
 
     def approve_invitation():
         """
         호스트가 게스트의 친구 초대를 허락하고 초대가 게스트의 친구에게 전달됩니다.
         """
-        pass    
+        pass   
     
+    # 게스트
+    def invite_friends_for_guest(chatroom_id,guest,data):
+        """
+        게스트가 자신의 친구에게 초대를 보내기 위해서 호스트의 승인을 기다립니다. 
+        """
+        pass
+
+    # 초대 대상
     def accept_invitation(chatroom_id):
         """
         초대 받은 친구가 초대를 수락합니다.
