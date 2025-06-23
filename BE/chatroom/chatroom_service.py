@@ -12,14 +12,13 @@ from django.shortcuts import render
 from django.utils import timezone
 from .serializers import ChatRoomSerializer
 from django.shortcuts import get_object_or_404
+from django.db import transaction
 
 from .models import ChatRoom, ChatParticipant,Invitation,InvitationBlock
 from schedules.models import Schedules
 from accounts.models import UserBlock
 from friendships.models import Friendship
 from participants.models import Participants
-
-
 
 class ChatRoomQueryService:
     @staticmethod
@@ -163,30 +162,28 @@ class ChatRoomInvitationService:
         invitation.status = 'pending'
         invitation.save()
 
-    # def accept_invitation(invitation_pk,user):
-    #     """
-    #     초대 받은 친구가 초대를 수락합니다.
+    def accept_invitation(invitation_pk,user):
+        """
+        초대 받은 친구가 초대를 수락합니다.
 
-    #     초대를 수락하면
-    #     Participants 테이블과 ChatParticipant 테이블에 해당 레코드 추가
-    #     """
-    #     invitation = get_object_or_404(Invitation,pk=invitation_pk,status='pending')
-    #     invitation.status = 'accepted'
-    #     invitation.save()
+        초대를 수락하면
+        Participants 테이블과 ChatParticipant 테이블에 해당 레코드 추가
+        """
+        invitation = get_object_or_404(Invitation,pk=invitation_pk,status='pending')
+        invitation.status = 'accepted'
+        invitation.save()
 
-    #     Participants.objects.create()
-    #     ChatParticipant.objects.create()
+        chatroom_instance = invitation.chatroom
+        schedule_instance = chatroom_instance.schedule
 
-    # def reject_invitation(invitation_pk,user):
-    #     """
-    #     초대 받은 친구가 초대를 거절합니다.
+        Participants.objects.create(schedule=schedule_instance,participant__id=user.id)
+        ChatParticipant.objects.create(chatroom=chatroom_instance,user=user)
 
-    #     초대를 거절하면
-    #     participants 테이블과 chatroomparticipant 테이블에 해당 레코드 삭제
-    #     """
-    #     invitation = get_object_or_404(Invitation,pk=invitation_pk,status='pending')
-    #     invitation.status = 'rejected'
-    #     invitation.save()
-
-    #     Participants.objects.delete(schedule__id=,participant__id=)
-    #     ChatParticipant.objects.delete(=)
+    def reject_invitation(invitation_pk):
+        """
+        초대 받은 친구가 초대를 거절합니다.
+        """
+        invitation = get_object_or_404(Invitation,pk=invitation_pk,status='pending')
+        invitation.status = 'rejected'
+        invitation.save()
+        
