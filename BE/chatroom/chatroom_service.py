@@ -11,6 +11,7 @@ views.py
 from django.shortcuts import render
 from django.utils import timezone
 from .serializers import ChatRoomSerializer
+from django.shortcuts import get_object_or_404
 
 from .models import ChatRoom, ChatParticipant,Invitation,InvitationBlock
 from schedules.models import Schedules
@@ -135,8 +136,7 @@ class ChatRoomInvitationService:
     # 4. 채팅방에 target user가 이미 존재하는 경우
 
     # 채팅방을 나갈 때 희망 시 채팅방 차단 로직 구현 필요
-        
-    # 호스트
+
     @staticmethod
     def invite_friends_for_host(host,target_user_id,chatroom_id):
         """
@@ -147,18 +147,20 @@ class ChatRoomInvitationService:
             Invitation.objects.create(chatroom__id=chatroom_id,from_user__id=host,status='pending')
 
     @staticmethod
-    def approve_invitation(chatroom_id,guest_id,target_id):
-        """
-        호스트가 게스트의 친구 초대를 허락하고 초대가 게스트의 친구에게 전달됩니다.
-        """
-        pass   
-    
-    # 게스트
     def invite_friends_for_guest(chatroom_id,guest,target_user_id):
         """
         게스트가 자신의 친구에게 초대를 보내기 위해서 호스트의 승인을 기다립니다. 
         """
         Invitation.objects.create(chatroom__id=chatroom_id,from_user=guest,to_user__id=target_user_id,status='h_pending')
+
+    @staticmethod
+    def approve_invitation(chatroom_id,guest_id,target_user_id):
+        """
+        호스트가 게스트의 친구 초대를 허락(status : h_pending -> pending)
+        """
+        invitation = get_object_or_404(Invitation,chatroom__id=chatroom_id,from_user__id=guest_id,to_user__id=target_user_id,status='h_pending')
+        invitation.status = 'pending'
+        invitation.save()
 
     # 초대 대상
     def accept_invitation(chatroom_id):
