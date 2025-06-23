@@ -146,19 +146,19 @@ class ChatRoomInvitationService:
         if Invitable and Friendship.objects.filter(from_user=host,to_user__id=target_user_id,status='accepted').exists():
             Invitation.objects.create(chatroom__id=chatroom_id,from_user__id=host,status='pending')
 
+    @staticmethod
     def approve_invitation(chatroom_id,guest_id,target_id):
         """
         호스트가 게스트의 친구 초대를 허락하고 초대가 게스트의 친구에게 전달됩니다.
         """
-
         pass   
     
     # 게스트
-    def invite_friends_for_guest(chatroom_id):
+    def invite_friends_for_guest(chatroom_id,guest,target_user_id):
         """
         게스트가 자신의 친구에게 초대를 보내기 위해서 호스트의 승인을 기다립니다. 
         """
-        pass
+        Invitation.objects.create(chatroom__id=chatroom_id,from_user=guest,to_user__id=target_user_id,status='h_pending')
 
     # 초대 대상
     def accept_invitation(chatroom_id):
