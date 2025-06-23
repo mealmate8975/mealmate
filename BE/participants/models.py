@@ -15,5 +15,6 @@ class Participants(models.Model):
         default=None,
         # null=True,
         # blank=True
-
     )
+    class Meta:
+        unique_together = ('schedule', 'participant')

@@ -17,6 +17,7 @@ from .models import ChatRoom, ChatParticipant,Invitation,InvitationBlock
 from schedules.models import Schedules
 from accounts.models import UserBlock
 from friendships.models import Friendship
+from participants.models import Participants
 
 
 
@@ -162,12 +163,30 @@ class ChatRoomInvitationService:
         invitation.status = 'pending'
         invitation.save()
 
-    # 초대 대상
-    def accept_invitation(chatroom_id):
-        """
-        초대 받은 친구가 초대를 수락합니다.
+    # def accept_invitation(invitation_pk,user):
+    #     """
+    #     초대 받은 친구가 초대를 수락합니다.
 
-        초대를 수락하면
-        participants 테이블과 chatroomparticipant 테이블에 id 추가
-        """
-        pass
+    #     초대를 수락하면
+    #     Participants 테이블과 ChatParticipant 테이블에 해당 레코드 추가
+    #     """
+    #     invitation = get_object_or_404(Invitation,pk=invitation_pk,status='pending')
+    #     invitation.status = 'accepted'
+    #     invitation.save()
+
+    #     Participants.objects.create()
+    #     ChatParticipant.objects.create()
+
+    # def reject_invitation(invitation_pk,user):
+    #     """
+    #     초대 받은 친구가 초대를 거절합니다.
+
+    #     초대를 거절하면
+    #     participants 테이블과 chatroomparticipant 테이블에 해당 레코드 삭제
+    #     """
+    #     invitation = get_object_or_404(Invitation,pk=invitation_pk,status='pending')
+    #     invitation.status = 'rejected'
+    #     invitation.save()
+
+    #     Participants.objects.delete(schedule__id=,participant__id=)
+    #     ChatParticipant.objects.delete(=)
