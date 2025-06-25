@@ -40,7 +40,7 @@ class ConfirmedChatRoomsView(APIView):
 
     def get(self, request):
         user = request.user
-        chatrooms = ChatRoomQueryService.get_confirmed_chatrooms(user)
+        chatrooms = ChatRoomQueryService.get_time_confirmed_chatrooms(user)
         serializer = ChatRoomSerializer(chatrooms, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -50,7 +50,7 @@ class UnconfirmedChatRoomsView(APIView):
 
     def get(self, request):
         user = request.user
-        unconfirmed_chatrooms = ChatRoomQueryService.get_unconfirmed_chatrooms(user)
+        unconfirmed_chatrooms = ChatRoomQueryService.get_time_unconfirmed_chatrooms(user)
         serializer = ChatRoomSerializer(unconfirmed_chatrooms, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
