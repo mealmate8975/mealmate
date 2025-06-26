@@ -62,10 +62,8 @@ class ChatRoomQueryService:
         time_confirmed_chatrooms = ChatRoomQueryService.get_confirmed_chatrooms(user)
         ongoing_chatrooms = time_confirmed_chatrooms.filter(schedule_start__lt=timezone.now()).exclude(schedule_end__lte=timezone.now())
         latest_chatroom = ongoing_chatrooms.order_by('-schedule_start').first()
-        if latest_chatroom:
-            return ChatRoomSerializer(latest_chatroom).data
-        return None
-    
+        return latest_chatroom
+       
     @staticmethod
     def get_confirmed_chatrooms_excluding_latest_ongoing(user):
         """
@@ -78,8 +76,8 @@ class ChatRoomQueryService:
         latest_chatroom = ongoing_chatrooms.order_by('-schedule_start').first()
         exclude_latest_chatroom = ongoing_chatrooms.order_by('-schedule_start').exclude(pk=latest_chatroom.pk)
         combined_chatrooms = (exclude_ongoing_chatrooms | exclude_latest_chatroom).distinct()
-        return ChatRoomSerializer(combined_chatrooms).data
-    
+        combined_chatrooms
+        
 class ChatRoomService:
     @staticmethod
     def check_participant(chatroom_id, user):
