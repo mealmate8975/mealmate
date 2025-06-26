@@ -65,18 +65,22 @@ class ChatRoomQueryService:
         return latest_chatroom
        
     @staticmethod
-    def get_confirmed_chatrooms_excluding_latest_ongoing(user):
+    def get_time_confirmed_chatrooms_excluding_ongoing(user):
         """
-        get_time_confirmed_chatrooms - get_ongoing_chatroom = ?
+        get_time_confirmed_chatrooms - get_ongoing_chatroom = result
         """
-        time_confirmed_chatrooms = ChatRoomQueryService.get_confirmed_chatrooms(user)
-        tmp = time_confirmed_chatrooms.filter(schedule_start__lt=timezone.now())
-        ongoing_chatrooms = tmp.exclude(schedule_end__lte=timezone.now())
-        exclude_ongoing_chatrooms = tmp.filter(schedule_end__lte=timezone.now())
-        latest_chatroom = ongoing_chatrooms.order_by('-schedule_start').first()
-        exclude_latest_chatroom = ongoing_chatrooms.order_by('-schedule_start').exclude(pk=latest_chatroom.pk)
-        combined_chatrooms = (exclude_ongoing_chatrooms | exclude_latest_chatroom).distinct()
-        return combined_chatrooms
+        # future 포함
+        time_confirmed = ChatRoomQueryService.get_time_confirmed_chatrooms(user)
+
+        # 진행 중인 것 중 최신 하나만 찾아냄
+        ongoing = time_confirmed.filter(
+            schedule__schedule_start__lt=timezone.now(),
+            schedule__schedule_end__gt=timezone.now(),
+        ).order_by('-schedule__schedule_start')
+
+        latest_ongoing = ongoing.first()
+        result = time_confirmed.exclude(pk=latest_ongoing.pk if latest_ongoing else None)
+        return result
 
 class ChatRoomService:
     @staticmethod

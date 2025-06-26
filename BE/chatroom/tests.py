@@ -58,14 +58,14 @@ class ChatRoomTestBase(APITestCase):
         ChatParticipant.objects.create(chatroom=self.chatroom_ongoing, user=self.user2)
 
 class GetChatroomTest(ChatRoomTestBase):
-    def test_get_time_confirmed_chatrooms(self):
+    def test_get_time_confirmed_chatrooms_excluding_ongoing(self):
         url = reverse('chatroom:confirmed_chatrooms')
         response = self.client.get(url)
         response_data = response.json()
         print(response_data)
-        self.assertEqual(len(response_data),3)
+        self.assertEqual(len(response_data),2)
         chatroom_ids = [chatroom['id'] for chatroom in response_data]
-        self.assertNotIn(self.chatroom_unconfirmed.id, chatroom_ids)
+        self.assertNotIn(self.chatroom_ongoing.id, chatroom_ids)
         self.assertEqual(response.status_code, 200)
 
     def test_get_time_unconfirmed_chatrooms(self):
