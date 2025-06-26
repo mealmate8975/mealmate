@@ -139,7 +139,7 @@ class ChatRoomInvitationService:
     # 채팅방을 나갈 때 희망 시 채팅방 차단 로직 구현 필요
 
     @staticmethod
-    def invite_friends_for_host(host,target_user_id,chatroom_id):
+    def invite_friend_for_host(host,target_user_id,chatroom_id):
         """
         호스트가 친구를 채팅방에 초대합니다.
         """
@@ -148,7 +148,7 @@ class ChatRoomInvitationService:
             Invitation.objects.create(chatroom__id=chatroom_id,from_user__id=host,status='pending')
 
     @staticmethod
-    def invite_friends_for_guest(chatroom_id,guest,target_user_id):
+    def invite_friend_for_guest(chatroom_id,guest,target_user_id):
         """
         게스트가 자신의 친구에게 초대를 보내기 위해서 호스트의 승인을 기다립니다. 
         """
@@ -166,19 +166,19 @@ class ChatRoomInvitationService:
     def accept_invitation(invitation_pk,user):
         """
         초대 받은 친구가 초대를 수락합니다.
-
-        초대를 수락하면
-        Participants 테이블과 ChatParticipant 테이블에 해당 레코드 추가
         """
         invitation = get_object_or_404(Invitation,pk=invitation_pk,status='pending')
-        invitation.status = 'accepted'
-        invitation.save()
+        
+        # 초대를 수락하면        Participants 테이블과 ChatParticipant 테이블에 해당 레코드 추가
+        with transaction.atomic():
+            invitation.status = 'accepted'
+            invitation.save()
 
-        chatroom_instance = invitation.chatroom
-        schedule_instance = chatroom_instance.schedule
+            chatroom_instance = invitation.chatroom
+            schedule_instance = chatroom_instance.schedule
 
-        Participants.objects.create(schedule=schedule_instance,participant__id=user.id)
-        ChatParticipant.objects.create(chatroom=chatroom_instance,user=user)
+            Participants.objects.create(schedule=schedule_instance,participant__id=user.id)
+            ChatParticipant.objects.create(chatroom=chatroom_instance,user=user)
 
     def reject_invitation(invitation_pk):
         """
