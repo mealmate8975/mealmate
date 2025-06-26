@@ -52,7 +52,7 @@ class ChatRoomQueryService:
         schedule_queryset = ChatRoomQueryService.get_user_schedules(user)
         time_unconfirmed_schedule_ids = schedule_queryset.filter(schedule_start__isnull=True).values_list('schedule_id', flat=True)
         time_unconfirmed_chatrooms = ChatRoom.objects.filter(schedule__schedule_id__in=time_unconfirmed_schedule_ids)
-        return ChatRoomSerializer(time_unconfirmed_chatrooms, many=True).data
+        return time_unconfirmed_chatrooms
 
     @staticmethod
     def get_ongoing_chatroom(user):

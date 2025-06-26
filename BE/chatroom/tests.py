@@ -26,33 +26,44 @@ class ChatRoomTestBase(APITestCase):
 
         self.client.force_login(self.user1)
 
+        now = timezone.now()
+
+        # confirmed schedule 
+        # host : user1 / guest : user2
+        self.schedule_confirmed1 = Schedules.objects.create(created_by=self.user1, schedule_start=now, with_chatroom=True)
+        self.chatroom_confirmed1 = ChatRoom.objects.create(schedule=self.schedule_confirmed1)
+        ChatParticipant.objects.create(chatroom=self.chatroom_confirmed1, user=self.user1)
+        ChatParticipant.objects.create(chatroom=self.chatroom_confirmed1, user=self.user2)
+        # host : user3 / guest : user1
+        self.schedule_confirmed2 = Schedules.objects.create(created_by=self.user3, schedule_start=now, with_chatroom=True)
+        self.chatroom_confirmed2 = ChatRoom.objects.create(schedule=self.schedule_confirmed2)
+        ChatParticipant.objects.create(chatroom=self.chatroom_confirmed2, user=self.user3)
+        ChatParticipant.objects.create(chatroom=self.chatroom_confirmed2, user=self.user1)
+
+        # unconfirmed schedule
+        # host : user1 / guest : user2
+        self.schedule_unconfirmed1 = Schedules.objects.create(created_by=self.user1, schedule_start=None, with_chatroom=True)
+        self.chatroom_unconfirmed1 = ChatRoom.objects.create(schedule=self.schedule_unconfirmed1)
+        ChatParticipant.objects.create(chatroom=self.chatroom_unconfirmed1, user=self.user1)
+        ChatParticipant.objects.create(chatroom=self.chatroom_unconfirmed1, user=self.user2)
+
 class GetChatroomTest(ChatRoomTestBase):
     def test_get_time_confirmed_chatrooms(self):
-
-        now = timezone.now()
-        # 호스트 : user1, 게스트 : user2        
-        schedule_instance1 = Schedules.objects.create(created_by=self.user1,schedule_start=now,with_chatroom=True)
-        chatroom_instance1 = ChatRoom.objects.create(schedule=schedule_instance1,)
-        ChatParticipant.objects.create(chatroom=chatroom_instance1,user=self.user1)
-        ChatParticipant.objects.create(chatroom=chatroom_instance1,user=self.user2)
-
-        # 호스트 : user3, 게스트 : user1
-        schedule_instance2 = Schedules.objects.create(created_by=self.user3,schedule_start=now,with_chatroom=True)
-        chatroom_instance2 = ChatRoom.objects.create(schedule=schedule_instance2)
-        ChatParticipant.objects.create(chatroom=chatroom_instance2,user=self.user3)
-        ChatParticipant.objects.create(chatroom=chatroom_instance2,user=self.user1)
-
-        # 호스트 : user2, 게스트 : user3
-        schedule_instance3 = Schedules.objects.create(created_by=self.user2,with_chatroom=True)
-        chatroom_instance3 = ChatRoom.objects.create(schedule=schedule_instance3)
-        ChatParticipant.objects.create(chatroom=chatroom_instance3,user=self.user2)
-        ChatParticipant.objects.create(chatroom=chatroom_instance3,user=self.user3)
-
         url = reverse('chatroom:confirmed_chatrooms')
         response = self.client.get(url)
         response_data = response.json()
         print(response_data)
         self.assertEqual(len(response_data),2)
         chatroom_ids = [chatroom['id'] for chatroom in response_data]
-        self.assertNotIn(chatroom_instance3.id, chatroom_ids)
+        self.assertNotIn(self.chatroom_unconfirmed1.id, chatroom_ids)
+        self.assertEqual(response.status_code, 200)
+
+    def test_get_time_unconfirmed_chatrooms(self):
+        url = reverse('chatroom:unconfirmed_chatrooms')
+        response = self.client.get(url)
+        response_data = response.json()
+        print(response_data)
+        self.assertEqual(len(response_data),1)
+        chatroom_ids = [chatroom['id'] for chatroom in response_data]
+        self.assertIn(self.chatroom_unconfirmed1.id, chatroom_ids)
         self.assertEqual(response.status_code, 200)

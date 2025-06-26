@@ -40,8 +40,8 @@ class ConfirmedChatRoomsView(APIView):
 
     def get(self, request):
         user = request.user
-        chatrooms = ChatRoomQueryService.get_time_confirmed_chatrooms(user)
-        serializer = ChatRoomSerializer(chatrooms, many=True)
+        time_confirmed_chatrooms = ChatRoomQueryService.get_time_confirmed_chatrooms(user)
+        serializer = ChatRoomSerializer(time_confirmed_chatrooms, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
