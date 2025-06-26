@@ -37,7 +37,7 @@ class ChatRoomQueryService:
     @staticmethod
     def get_time_confirmed_chatrooms(user):
         '''
-        확정된 시작 시간을 가진 채팅방
+        확정된 시작 시간을 가진 채팅방 가져오기
         '''
         schedule_queryset = ChatRoomQueryService.get_user_schedules(user)
         time_confirmed_schedule_ids = schedule_queryset.filter(schedule_start__isnull=False).values_list('schedule_id', flat=True)
@@ -47,7 +47,7 @@ class ChatRoomQueryService:
     @staticmethod
     def get_time_unconfirmed_chatrooms(user):
         '''
-        확정되지 않은 시작 시간을 가진 채팅방
+        확정되지 않은 시작 시간을 가진 채팅방 가져오기
         '''
         schedule_queryset = ChatRoomQueryService.get_user_schedules(user)
         time_unconfirmed_schedule_ids = schedule_queryset.filter(schedule_start__isnull=True).values_list('schedule_id', flat=True)
@@ -57,7 +57,7 @@ class ChatRoomQueryService:
     @staticmethod
     def get_ongoing_chatroom(user):
         """
-        확정된 시작 시간을 가진 채팅방 중 진행중인 채팅방
+        확정된 시작 시간을 가진 채팅방 중 진행중인 채팅방 가져오기
         """
         time_confirmed_chatrooms = ChatRoomQueryService.get_time_confirmed_chatrooms(user)
         ongoing_chatrooms = time_confirmed_chatrooms.filter(schedule__schedule_start__lt=timezone.now()).exclude(schedule__schedule_end__lte=timezone.now())
@@ -69,7 +69,6 @@ class ChatRoomQueryService:
         """
         get_time_confirmed_chatrooms - get_ongoing_chatroom = result
         """
-        # future 포함
         time_confirmed = ChatRoomQueryService.get_time_confirmed_chatrooms(user)
 
         # 진행 중인 것 중 최신 하나만 찾아냄

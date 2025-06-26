@@ -28,17 +28,17 @@ class ChatRoomTestBase(APITestCase):
         self.client.force_login(self.user1)
 
         now = timezone.now()
-        one_hour_before = now - timedelta(hours=1)
-        one_hour_later = now + timedelta(hours=1)
+        self.one_hour_before = now - timedelta(hours=1)
+        self.one_hour_later = now + timedelta(hours=1)
 
         # confirmed schedule 
         # host : user1 / guest : user2
-        self.schedule_confirmed1 = Schedules.objects.create(created_by=self.user1, schedule_start=one_hour_later, with_chatroom=True)
+        self.schedule_confirmed1 = Schedules.objects.create(created_by=self.user1, schedule_start=self.one_hour_later, with_chatroom=True)
         self.chatroom_confirmed1 = ChatRoom.objects.create(schedule=self.schedule_confirmed1)
         ChatParticipant.objects.create(chatroom=self.chatroom_confirmed1, user=self.user1)
         ChatParticipant.objects.create(chatroom=self.chatroom_confirmed1, user=self.user2)
         # host : user3 / guest : user1
-        self.schedule_confirmed2 = Schedules.objects.create(created_by=self.user3, schedule_start=one_hour_later, with_chatroom=True)
+        self.schedule_confirmed2 = Schedules.objects.create(created_by=self.user3, schedule_start=self.one_hour_later, with_chatroom=True)
         self.chatroom_confirmed2 = ChatRoom.objects.create(schedule=self.schedule_confirmed2)
         ChatParticipant.objects.create(chatroom=self.chatroom_confirmed2, user=self.user3)
         ChatParticipant.objects.create(chatroom=self.chatroom_confirmed2, user=self.user1)
@@ -50,39 +50,54 @@ class ChatRoomTestBase(APITestCase):
         ChatParticipant.objects.create(chatroom=self.chatroom_unconfirmed, user=self.user1)
         ChatParticipant.objects.create(chatroom=self.chatroom_unconfirmed, user=self.user2)
 
+class GetChatroomTest(ChatRoomTestBase):
+    def test_ongoing(self):
         # ongoing schedule
         # host : user1 / guest : user2
-        self.schedule_ongoing = Schedules.objects.create(created_by=self.user1,schedule_start=one_hour_before,schedule_end=one_hour_later,with_chatroom=True)
+        self.schedule_ongoing = Schedules.objects.create(created_by=self.user1,schedule_start=self.one_hour_before,schedule_end=self.one_hour_later,with_chatroom=True)
+        self.chatroom_ongoing = ChatRoom.objects.create(schedule=self.schedule_ongoing)
+        ChatParticipant.objects.create(chatroom=self.chatroom_ongoing, user=self.user1)
+        ChatParticipant.objects.create(chatroom=self.chatroom_ongoing, user=self.user2)
+        
+        url = reverse('chatroom:ongoing')
+        response = self.client.get(url)
+        response_data = response.json()
+        print(response_data)
+        chatroom_id = response_data['id']
+        self.assertEqual(self.chatroom_ongoing.id,chatroom_id)
+        self.assertEqual(response.status_code, 200)
+
+    def test_confirmed_excluding_ongoing(self):
+        # ongoing schedule
+        # host : user1 / guest : user2
+        self.schedule_ongoing = Schedules.objects.create(created_by=self.user1,schedule_start=self.one_hour_before,schedule_end=self.one_hour_later,with_chatroom=True)
         self.chatroom_ongoing = ChatRoom.objects.create(schedule=self.schedule_ongoing)
         ChatParticipant.objects.create(chatroom=self.chatroom_ongoing, user=self.user1)
         ChatParticipant.objects.create(chatroom=self.chatroom_ongoing, user=self.user2)
 
-class GetChatroomTest(ChatRoomTestBase):
-    def test_get_time_confirmed_chatrooms_excluding_ongoing(self):
-        url = reverse('chatroom:confirmed_chatrooms')
+        url = reverse('chatroom:confirmed-ongoing')
         response = self.client.get(url)
         response_data = response.json()
         print(response_data)
-        self.assertEqual(len(response_data),2)
+        self.assertEqual(len(response_data),2) # 3 - 1 = 2
         chatroom_ids = [chatroom['id'] for chatroom in response_data]
         self.assertNotIn(self.chatroom_ongoing.id, chatroom_ids)
         self.assertEqual(response.status_code, 200)
+    
+    def test_confirmed_excluding_None(self):
+        url = reverse('chatroom:confirmed-ongoing')
+        response = self.client.get(url)
+        response_data = response.json()
+        print(response_data)
+        self.assertEqual(len(response_data),2) # 2 - 0 = 0
+        self.assertEqual(response.status_code, 200)
 
-    def test_get_time_unconfirmed_chatrooms(self):
-        url = reverse('chatroom:unconfirmed_chatrooms')
+    def test_unconfirmed(self):
+        url = reverse('chatroom:unconfirmed')
         response = self.client.get(url)
         response_data = response.json()
         print(response_data)
         self.assertEqual(len(response_data),1)
         chatroom_ids = [chatroom['id'] for chatroom in response_data]
         self.assertIn(self.chatroom_unconfirmed.id, chatroom_ids)
-        self.assertEqual(response.status_code, 200)
-    
-    def test_get_ongoing_chatroom(self):
-        url = reverse('chatroom:ongoing_chatrooms')
-        response = self.client.get(url)
-        response_data = response.json()
-        print(response_data)
-        chatroom_id = response_data['id']
-        self.assertEqual(self.chatroom_ongoing.id,chatroom_id)
         self.assertEqual(response.status_code, 200)
