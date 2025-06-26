@@ -54,6 +54,15 @@ class UnconfirmedChatRoomsView(APIView):
         serializer = ChatRoomSerializer(unconfirmed_chatrooms, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+class OnGoingChatRoomsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        ongoing_chatrooms = ChatRoomQueryService.get_ongoing_chatroom(user)
+        serializer = ChatRoomSerializer(ongoing_chatrooms)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class UserSchedulesView(APIView):
     permission_classes = [IsAuthenticated]
