@@ -59,9 +59,9 @@ class ChatRoomQueryService:
         """
         확정된 시작 시간을 가진 채팅방 중 진행중인 채팅방
         """
-        time_confirmed_chatrooms = ChatRoomQueryService.get_confirmed_chatrooms(user)
-        ongoing_chatrooms = time_confirmed_chatrooms.filter(schedule_start__lt=timezone.now()).exclude(schedule_end__lte=timezone.now())
-        latest_chatroom = ongoing_chatrooms.order_by('-schedule_start').first()
+        time_confirmed_chatrooms = ChatRoomQueryService.get_time_confirmed_chatrooms(user)
+        ongoing_chatrooms = time_confirmed_chatrooms.filter(schedule__schedule_start__lt=timezone.now()).exclude(schedule__schedule_end__lte=timezone.now())
+        latest_chatroom = ongoing_chatrooms.order_by('-schedule__schedule_start').first()
         return latest_chatroom
        
     @staticmethod
@@ -76,8 +76,8 @@ class ChatRoomQueryService:
         latest_chatroom = ongoing_chatrooms.order_by('-schedule_start').first()
         exclude_latest_chatroom = ongoing_chatrooms.order_by('-schedule_start').exclude(pk=latest_chatroom.pk)
         combined_chatrooms = (exclude_ongoing_chatrooms | exclude_latest_chatroom).distinct()
-        combined_chatrooms
-        
+        return combined_chatrooms
+
 class ChatRoomService:
     @staticmethod
     def check_participant(chatroom_id, user):
