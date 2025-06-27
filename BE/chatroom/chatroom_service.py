@@ -13,12 +13,16 @@ from django.utils import timezone
 from .serializers import ChatRoomSerializer
 from django.shortcuts import get_object_or_404
 from django.db import transaction
+from friendships.views import FriendRequestService
+from django.contrib.auth import get_user_model
 
 from .models import ChatRoom, ChatParticipant,Invitation,InvitationBlock
 from schedules.models import Schedules
 from accounts.models import UserBlock
 from friendships.models import Friendship
 from participants.models import Participants
+
+User = get_user_model()
 
 class ChatRoomQueryService:
     @staticmethod
@@ -143,12 +147,23 @@ class ChatRoomInvitationService:
         """
         호스트가 친구를 채팅방에 초대합니다.
         """
-        Invitable,message = ChatRoomInvitationService.check_invitable_state(chatroom_id,host.id,target_user_id)
-        # print(message)
-        if Invitable and Friendship.objects.filter(from_user=host,to_user__id=target_user_id,status='accepted').exists():
-            Invitation.objects.create(chatroom__id=chatroom_id,from_user__id=host,status='pending')
-            return True, "Invitation Success"
-        return False, "Invitation Failed"
+        is_friend,friend_msg = FriendRequestService.check_friendship(host,target_user_id)
+        if not is_friend:
+            return False, friend_msg
+
+        is_invitable,invite_msg = ChatRoomInvitationService.check_invitable_state(chatroom_id,host.id,target_user_id)
+        if not is_invitable:
+            return False, invite_msg
+        
+        chatroom = get_object_or_404(ChatRoom, id=chatroom_id)
+        to_user = get_object_or_404(User,id=target_user_id)
+        
+        Invitation.objects.create(
+            chatroom=chatroom,
+            from_user=host,
+            to_user=to_user,
+            status='pending')
+        return True, "Invitation sent successfully."
     
     @staticmethod
     def invite_friend_for_guest(chatroom_id,guest,target_user_id):
