@@ -139,14 +139,17 @@ class ChatRoomInvitationService:
     # 채팅방을 나갈 때 희망 시 채팅방 차단 로직 구현 필요
 
     @staticmethod
-    def invite_friend_for_host(host,target_user_id,chatroom_id):
+    def invite_friend_for_host(host,chatroom_id,target_user_id):
         """
         호스트가 친구를 채팅방에 초대합니다.
         """
-        Invitable,tmp_str = ChatRoomInvitationService.check_invitable_state(chatroom_id,host.id,target_user_id)
+        Invitable,message = ChatRoomInvitationService.check_invitable_state(chatroom_id,host.id,target_user_id)
+        # print(message)
         if Invitable and Friendship.objects.filter(from_user=host,to_user__id=target_user_id,status='accepted').exists():
             Invitation.objects.create(chatroom__id=chatroom_id,from_user__id=host,status='pending')
-
+            return True, "Invitation Success"
+        return False, "Invitation Failed"
+    
     @staticmethod
     def invite_friend_for_guest(chatroom_id,guest,target_user_id):
         """
@@ -168,7 +171,7 @@ class ChatRoomInvitationService:
         초대 받은 친구가 초대를 수락합니다.
         """
         invitation = get_object_or_404(Invitation,pk=invitation_pk,status='pending')
-        
+
         # 초대를 수락하면        Participants 테이블과 ChatParticipant 테이블에 해당 레코드 추가
         with transaction.atomic():
             invitation.status = 'accepted'
