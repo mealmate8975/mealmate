@@ -13,7 +13,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 
-from .chatroom_service import ChatRoomService, ChatRoomQueryService
+from .chatroom_service import ChatRoomService, ChatRoomQueryService, ChatRoomInvitationService
 from .serializers import ChatRoomSerializer
 from schedules.models import Schedules
 from schedules.serializers import ScheduleSerializer
@@ -72,3 +72,11 @@ class UserSchedulesView(APIView):
         schedules = ChatRoomQueryService.get_user_schedules(user)
         serializer = ScheduleSerializer(schedules, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class InviteFriendForHostView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self,request,chatroom_id,target_user_id):
+        host = request.user
+        ChatRoomInvitationService.invite_friend_for_host(host,chatroom_id,target_user_id)
+        return Response(status=status.HTTP_201_CREATED)
