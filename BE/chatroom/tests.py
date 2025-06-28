@@ -7,6 +7,7 @@ from datetime import timedelta
 
 from chatroom.models import ChatParticipant,ChatRoom
 from schedules.models import Schedules
+from friendships.models import Friendship
 # from participants.models import Participants
 
 User = get_user_model()
@@ -62,7 +63,7 @@ class GetChatroomTest(ChatRoomTestBase):
         url = reverse('chatroom:ongoing')
         response = self.client.get(url)
         response_data = response.json()
-        print(response_data)
+        # print(response_data)
         chatroom_id = response_data['id']
         self.assertEqual(self.chatroom_ongoing.id,chatroom_id)
         self.assertEqual(response.status_code, 200)
@@ -78,7 +79,7 @@ class GetChatroomTest(ChatRoomTestBase):
         url = reverse('chatroom:confirmed-ongoing')
         response = self.client.get(url)
         response_data = response.json()
-        print(response_data)
+        # print(response_data)
         self.assertEqual(len(response_data),2) # 3 - 1 = 2
         chatroom_ids = [chatroom['id'] for chatroom in response_data]
         self.assertNotIn(self.chatroom_ongoing.id, chatroom_ids)
@@ -88,7 +89,7 @@ class GetChatroomTest(ChatRoomTestBase):
         url = reverse('chatroom:confirmed-ongoing')
         response = self.client.get(url)
         response_data = response.json()
-        print(response_data)
+        # print(response_data)
         self.assertEqual(len(response_data),2) # 2 - 0 = 0
         self.assertEqual(response.status_code, 200)
 
@@ -96,8 +97,34 @@ class GetChatroomTest(ChatRoomTestBase):
         url = reverse('chatroom:unconfirmed')
         response = self.client.get(url)
         response_data = response.json()
-        print(response_data)
+        # print(response_data)
         self.assertEqual(len(response_data),1)
         chatroom_ids = [chatroom['id'] for chatroom in response_data]
         self.assertIn(self.chatroom_unconfirmed.id, chatroom_ids)
         self.assertEqual(response.status_code, 200)
+
+class ChatRoomInvitationTestBase(APITestCase):
+    def setUp(self):
+        self.user1 = User(email="user1@example.com", name="User One", nickname="user1", gender='0')
+        self.user1.set_password("pass")
+        self.user1.save()
+
+        self.user2 = User(email="user2@example.com", name="User Two", nickname="user2", gender='1')
+        self.user2.set_password("pass")
+        self.user2.save()
+
+        self.client.force_login(self.user1)
+
+class ChatRoomInvitationTest(ChatRoomInvitationTestBase):
+    # def test_chatroom_blocked_case(self):
+        
+
+    def test_invite_friend_for_host(self):
+        self.schedule1 = Schedules.objects.create(created_by=self.user1, with_chatroom=True)
+        self.chatroom1 = ChatRoom.objects.create(schedule=self.schedule1)
+        ChatParticipant.objects.create(chatroom=self.chatroom1, user=self.user1)
+        Friendship.objects.create(from_user=self.user1,to_user=self.user2,status="accepted")
+
+        url = reverse('chatroom:invite_friend_for_host', args=[self.chatroom1.id, self.user2.id])
+        response = self.client.post(url, {}, format="json")
+        self.assertEqual(response.status_code,201)

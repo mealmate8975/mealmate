@@ -78,7 +78,11 @@ class InviteFriendForHostView(APIView):
 
     def post(self,request,chatroom_id,target_user_id):
         host = request.user
+        print(f"[DEBUG][VIEW] host={host.id}, chatroom_id={chatroom_id}, target_user_id={target_user_id}")
+
         success, message = ChatRoomInvitationService.invite_friend_for_host(host,chatroom_id,target_user_id)
+        print(f"[DEBUG][VIEW] success={success}, message={message}")
+        
         if not success:
             return Response({"detail": message}, status=400)
         return Response(status=201)
