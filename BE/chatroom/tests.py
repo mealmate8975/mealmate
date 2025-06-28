@@ -5,10 +5,12 @@ from django.utils import timezone
 from datetime import timedelta
 
 
-from chatroom.models import ChatParticipant,ChatRoom
+from chatroom.models import ChatParticipant,ChatRoom,InvitationBlock
 from schedules.models import Schedules
 from friendships.models import Friendship
 # from participants.models import Participants
+
+from chatroom.chatroom_service import ChatRoomInvitationService
 
 User = get_user_model()
 
@@ -115,16 +117,19 @@ class ChatRoomInvitationTestBase(APITestCase):
 
         self.client.force_login(self.user1)
 
-class ChatRoomInvitationTest(ChatRoomInvitationTestBase):
-    # def test_chatroom_blocked_case(self):
-        
-
-    def test_invite_friend_for_host(self):
         self.schedule1 = Schedules.objects.create(created_by=self.user1, with_chatroom=True)
         self.chatroom1 = ChatRoom.objects.create(schedule=self.schedule1)
         ChatParticipant.objects.create(chatroom=self.chatroom1, user=self.user1)
         Friendship.objects.create(from_user=self.user1,to_user=self.user2,status="accepted")
 
+class ChatRoomInvitationTest(ChatRoomInvitationTestBase):
+    def test_invitable_when_chatroom_blocked(self):
+        InvitationBlock.objects.create(blocking_user=self.user2,blocked_chatroom=self.chatroom1)
+        is_invitable, msg = ChatRoomInvitationService.check_invitable_state(self.chatroom1.id,self.user1.id,self.user2.id)
+        self.assertFalse(is_invitable)
+        # self.assertEqual(msg,"This user has blocked invitations to this chatroom.")
+
+    def test_invite_friend_for_host(self): 
         url = reverse('chatroom:invite_friend_for_host', args=[self.chatroom1.id, self.user2.id])
         response = self.client.post(url, {}, format="json")
         self.assertEqual(response.status_code,201)
