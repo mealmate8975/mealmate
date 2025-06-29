@@ -127,10 +127,11 @@ class ChatRoomInvitationService:
         if existing_invitation:
             return False, "User has already been invited."
         
-        # 4. target user가 이미 채팅방에 있는 경우
-        already_in_chatroom = ChatParticipant.objects.filter(pk=chatroom_id,user=target_user_id).exists()
-        if already_in_chatroom:
-            return False, "User is already in chatroom."
+        # # 4. target user가 이미 채팅방에 있는 경우
+        # already_in_chatroom = ChatParticipant.objects.filter(pk=chatroom_id,user=target_user_id).exists()
+        # if already_in_chatroom:
+        #     return False, "User is already in chatroom."
+        # -> target user가 이미 채팅방에 있는 경우 ,accepted 조건에 해당되기 때문에 불필요
         
         return True, "Invitable"
 

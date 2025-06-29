@@ -136,8 +136,23 @@ class ChatRoomInvitationTest(ChatRoomInvitationTestBase):
         self.assertFalse(is_invitable)
         self.assertEqual(msg,"This user has blocked the inviter.")
     
-    # def test_invitable_when_already_invited(self):
-    #     Invitation.objects.create(chatroom=self.chatroom1,from_user=self.user1,to_user=self.user2,status=)
+    def test_invitable_when_hpending(self):
+        Invitation.objects.create(chatroom=self.chatroom1,from_user=self.user1,to_user=self.user2,status="h_pending")
+        is_invitable, msg = ChatRoomInvitationService.check_invitable_state(self.chatroom1.id,self.user1.id,self.user2.id)
+        self.assertFalse(is_invitable)
+        self.assertEqual(msg,"User has already been invited.")
+    
+    def test_invitable_when_pending(self):
+        Invitation.objects.create(chatroom=self.chatroom1,from_user=self.user1,to_user=self.user2,status="pending")
+        is_invitable, msg = ChatRoomInvitationService.check_invitable_state(self.chatroom1.id,self.user1.id,self.user2.id)
+        self.assertFalse(is_invitable)
+        self.assertEqual(msg,"User has already been invited.")
+    
+    def test_invitable_when_accepted(self):
+        Invitation.objects.create(chatroom=self.chatroom1,from_user=self.user1,to_user=self.user2,status="accepted")
+        is_invitable, msg = ChatRoomInvitationService.check_invitable_state(self.chatroom1.id,self.user1.id,self.user2.id)
+        self.assertFalse(is_invitable)
+        self.assertEqual(msg,"User has already been invited.")
 
     def test_invite_friend_for_host(self): 
         url = reverse('chatroom:invite_friend_for_host', args=[self.chatroom1.id, self.user2.id])
