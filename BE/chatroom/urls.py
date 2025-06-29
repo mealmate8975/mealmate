@@ -6,6 +6,7 @@ from .views import (
     OnGoingChatRoomsView,
     UserSchedulesView,
     InviteFriendForHostView,
+    InviteFriendForGuestView,
 )
 
 app_name = "chatroom"
@@ -17,4 +18,5 @@ urlpatterns = [
     path('chatrooms/ongoing/',OnGoingChatRoomsView.as_view(), name='ongoing'),
     path('chatrooms/schedules/', UserSchedulesView.as_view(), name='user_schedules'),  
     path('chatrooms/invite-friend-for-host/<int:chatroom_id>/<int:target_user_id>/',InviteFriendForHostView.as_view(),name='invite_friend_for_host'),    
+    path('chatrooms/invite-friend-for-guest/<int:chatroom_id>/<int:target_user_id>/',InviteFriendForGuestView.as_view(),name='invite_friend_for_guest'),    
 ]

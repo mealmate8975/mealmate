@@ -86,3 +86,17 @@ class InviteFriendForHostView(APIView):
         if not success:
             return Response({"detail": message}, status=400)
         return Response(status=201)
+
+class InviteFriendForGuestView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self,request,chatroom_id,target_user_id):
+        guest = request.user
+        print(f"[DEBUG][VIEW] guest={guest.id}, chatroom_id={chatroom_id}, target_user_id={target_user_id}")
+
+        success, message = ChatRoomInvitationService.invite_friend_for_guest(guest,chatroom_id,target_user_id)
+        print(f"[DEBUG][VIEW] success={success}, message={message}")
+        
+        if not success:
+            return Response({"detail": message}, status=400)
+        return Response(status=201)

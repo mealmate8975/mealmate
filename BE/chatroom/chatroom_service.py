@@ -122,6 +122,7 @@ class ChatRoomInvitationService:
         # 3. 이미 보낸 초대가 존재하는 경우
         existing_invitation = Invitation.objects.filter(
         chatroom=chatroom_id,
+        from_user__id=inviter_id,
         to_user=target_user_id,
         status__in=['h_pending','pending','accepted']).exists()
         if existing_invitation:
@@ -148,10 +149,11 @@ class ChatRoomInvitationService:
         """
         호스트가 친구를 채팅방에 초대합니다.
         """
+        # 1단계 친구 관계인지 확인
         is_friend,friend_msg = FriendRequestService.check_friendship(host,target_user_id)
         if not is_friend:
             return False, friend_msg
-
+        # 2단계 초대 가능한 상태인지 확인
         is_invitable,invite_msg = ChatRoomInvitationService.check_invitable_state(chatroom_id,host.id,target_user_id)
         if not is_invitable:
             return False, invite_msg
@@ -167,12 +169,25 @@ class ChatRoomInvitationService:
         return True, "Invitation sent successfully."
     
     @staticmethod
-    def invite_friend_for_guest(chatroom_id,guest,target_user_id):
+    def invite_friend_for_guest(guest,chatroom_id,target_user_id):
         """
         게스트가 자신의 친구에게 초대를 보내기 위해서 호스트의 승인을 기다립니다. 
         """
-        Invitation.objects.create(chatroom__id=chatroom_id,from_user=guest,to_user__id=target_user_id,status='h_pending')
+        # 1단계 친구 관계인지 확인
+        is_friend,friend_msg = FriendRequestService.check_friendship(guest,target_user_id)
+        if not is_friend:
+            return False, friend_msg
+        # 2단계 초대 가능한 상태인지 확인
+        is_invitable,invite_msg = ChatRoomInvitationService.check_invitable_state(chatroom_id,guest.id,target_user_id)
+        if not is_invitable:
+            return False, invite_msg
+        
+        chatroom = get_object_or_404(ChatRoom,pk=chatroom_id)
+        to_user = get_object_or_404(User,pk=target_user_id)
 
+        Invitation.objects.create(chatroom=chatroom,from_user=guest,to_user=to_user,status='h_pending')
+        return True,"Invitation request to host sent successfully."
+    
     @staticmethod
     def approve_invitation(chatroom_id,guest_id,target_user_id):
         """

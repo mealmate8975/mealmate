@@ -4,7 +4,6 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from datetime import timedelta
 
-
 from chatroom.models import ChatParticipant,ChatRoom,InvitationBlock,Invitation
 from schedules.models import Schedules
 from friendships.models import Friendship
@@ -116,7 +115,9 @@ class ChatRoomInvitationTestBase(APITestCase):
         self.user2.set_password("pass")
         self.user2.save()
 
-        self.client.force_login(self.user1)
+        self.user3 = User(email="user3@example.com", name="User Three", nickname="user3", gender='0')
+        self.user3.set_password("pass")
+        self.user3.save()
 
         self.schedule1 = Schedules.objects.create(created_by=self.user1, with_chatroom=True)
         self.chatroom1 = ChatRoom.objects.create(schedule=self.schedule1)
@@ -155,6 +156,18 @@ class ChatRoomInvitationTest(ChatRoomInvitationTestBase):
         self.assertEqual(msg,"User has already been invited.")
 
     def test_invite_friend_for_host(self): 
+        self.client.force_login(self.user1)
+
         url = reverse('chatroom:invite_friend_for_host', args=[self.chatroom1.id, self.user2.id])
+        response = self.client.post(url, {}, format="json")
+        self.assertEqual(response.status_code,201)
+    
+    def test_invite_friend_for_guest(self):
+        self.client.force_login(self.user2)
+
+        ChatParticipant.objects.create(chatroom=self.chatroom1, user=self.user2)
+        Friendship.objects.create(from_user=self.user2,to_user=self.user3,status="accepted")
+
+        url = reverse('chatroom:invite_friend_for_guest',args=[self.chatroom1.id,self.user3.id])
         response = self.client.post(url, {}, format="json")
         self.assertEqual(response.status_code,201)
