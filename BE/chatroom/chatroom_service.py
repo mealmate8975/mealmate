@@ -123,7 +123,7 @@ class ChatRoomInvitationService:
         existing_invitation = Invitation.objects.filter(
         chatroom=chatroom_id,
         to_user=target_user_id,
-        status='pending').exists()
+        status__in=['h_pending','pending','accepted']).exists()
         if existing_invitation:
             return False, "User has already been invited."
         

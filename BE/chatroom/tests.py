@@ -5,7 +5,7 @@ from django.utils import timezone
 from datetime import timedelta
 
 
-from chatroom.models import ChatParticipant,ChatRoom,InvitationBlock
+from chatroom.models import ChatParticipant,ChatRoom,InvitationBlock,Invitation
 from schedules.models import Schedules
 from friendships.models import Friendship
 from accounts.models import UserBlock
@@ -135,6 +135,9 @@ class ChatRoomInvitationTest(ChatRoomInvitationTestBase):
         is_invitable, msg = ChatRoomInvitationService.check_invitable_state(self.chatroom1.id,self.user1.id,self.user2.id)
         self.assertFalse(is_invitable)
         self.assertEqual(msg,"This user has blocked the inviter.")
+    
+    # def test_invitable_when_already_invited(self):
+    #     Invitation.objects.create(chatroom=self.chatroom1,from_user=self.user1,to_user=self.user2,status=)
 
     def test_invite_friend_for_host(self): 
         url = reverse('chatroom:invite_friend_for_host', args=[self.chatroom1.id, self.user2.id])
