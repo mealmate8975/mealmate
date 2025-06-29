@@ -8,6 +8,7 @@ from datetime import timedelta
 from chatroom.models import ChatParticipant,ChatRoom,InvitationBlock
 from schedules.models import Schedules
 from friendships.models import Friendship
+from accounts.models import UserBlock
 # from participants.models import Participants
 
 from chatroom.chatroom_service import ChatRoomInvitationService
@@ -127,7 +128,13 @@ class ChatRoomInvitationTest(ChatRoomInvitationTestBase):
         InvitationBlock.objects.create(blocking_user=self.user2,blocked_chatroom=self.chatroom1)
         is_invitable, msg = ChatRoomInvitationService.check_invitable_state(self.chatroom1.id,self.user1.id,self.user2.id)
         self.assertFalse(is_invitable)
-        # self.assertEqual(msg,"This user has blocked invitations to this chatroom.")
+        self.assertEqual(msg,"This user has blocked invitations to this chatroom.")
+    
+    def test_invitable_when_inviter_blocked(self):
+        UserBlock.objects.create(blocker=self.user2,blocked_user=self.user1)
+        is_invitable, msg = ChatRoomInvitationService.check_invitable_state(self.chatroom1.id,self.user1.id,self.user2.id)
+        self.assertFalse(is_invitable)
+        self.assertEqual(msg,"This user has blocked the inviter.")
 
     def test_invite_friend_for_host(self): 
         url = reverse('chatroom:invite_friend_for_host', args=[self.chatroom1.id, self.user2.id])
