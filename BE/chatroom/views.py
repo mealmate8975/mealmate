@@ -18,7 +18,7 @@ from .serializers import ChatRoomSerializer
 from schedules.models import Schedules
 from schedules.serializers import ScheduleSerializer
 
-
+# 채팅방 참여자 확인
 class CheckParticipantView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -35,6 +35,7 @@ class CheckParticipantView(APIView):
             return Response({'allowed': False}, status=status.HTTP_403_FORBIDDEN)
 
 
+# 확정된 채팅방 조회
 class ConfirmedChatRoomsView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -45,6 +46,7 @@ class ConfirmedChatRoomsView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+# 확정되지 않은 채팅방 조회
 class UnconfirmedChatRoomsView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -54,6 +56,7 @@ class UnconfirmedChatRoomsView(APIView):
         serializer = ChatRoomSerializer(unconfirmed_chatrooms, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+# 현재 진행중인 채팅방 조회
 class OnGoingChatRoomsView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -64,6 +67,7 @@ class OnGoingChatRoomsView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+# 유저 일정 조회
 class UserSchedulesView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -73,6 +77,7 @@ class UserSchedulesView(APIView):
         serializer = ScheduleSerializer(schedules, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+# 채팅방 주인이 친구 초대
 class InviteFriendForHostView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -87,6 +92,7 @@ class InviteFriendForHostView(APIView):
             return Response({"detail": message}, status=400)
         return Response(status=201)
 
+# 채팅방 참여자가 친구 초대
 class InviteFriendForGuestView(APIView):
     permission_classes = [IsAuthenticated]
 

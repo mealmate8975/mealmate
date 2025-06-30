@@ -14,6 +14,7 @@ from chatroom.chatroom_service import ChatRoomInvitationService
 
 User = get_user_model()
 
+# 채팅방 테스트 기본 클래스
 class ChatRoomTestBase(APITestCase):
     def setUp(self):
         self.user1 = User(email="user1@example.com", name="User One", nickname="user1", gender='0')
@@ -53,7 +54,10 @@ class ChatRoomTestBase(APITestCase):
         ChatParticipant.objects.create(chatroom=self.chatroom_unconfirmed, user=self.user1)
         ChatParticipant.objects.create(chatroom=self.chatroom_unconfirmed, user=self.user2)
 
+# 채팅방 테스트 클래스
 class GetChatroomTest(ChatRoomTestBase):
+    
+    # 현재 진행중인 채팅방 조회
     def test_ongoing(self):
         # ongoing schedule
         # host : user1 / guest : user2
@@ -70,6 +74,7 @@ class GetChatroomTest(ChatRoomTestBase):
         self.assertEqual(self.chatroom_ongoing.id,chatroom_id)
         self.assertEqual(response.status_code, 200)
 
+    # 현재 진행중인 채팅방 제외하고 확정된 채팅방 조회
     def test_confirmed_excluding_ongoing(self):
         # ongoing schedule
         # host : user1 / guest : user2
@@ -87,6 +92,7 @@ class GetChatroomTest(ChatRoomTestBase):
         self.assertNotIn(self.chatroom_ongoing.id, chatroom_ids)
         self.assertEqual(response.status_code, 200)
     
+    # 확정된 채팅방 조회 (확정된 채팅방이 없는 경우)
     def test_confirmed_excluding_None(self):
         url = reverse('chatroom:confirmed-ongoing')
         response = self.client.get(url)
@@ -95,6 +101,7 @@ class GetChatroomTest(ChatRoomTestBase):
         self.assertEqual(len(response_data),2) # 2 - 0 = 0
         self.assertEqual(response.status_code, 200)
 
+    # 확정되지 않은 채팅방 조회
     def test_unconfirmed(self):
         url = reverse('chatroom:unconfirmed')
         response = self.client.get(url)
@@ -105,6 +112,7 @@ class GetChatroomTest(ChatRoomTestBase):
         self.assertIn(self.chatroom_unconfirmed.id, chatroom_ids)
         self.assertEqual(response.status_code, 200)
 
+# 채팅방 초대 테스트 기본 클래스
 class ChatRoomInvitationTestBase(APITestCase):
     def setUp(self):
         self.user1 = User(email="user1@example.com", name="User One", nickname="user1", gender='0')
@@ -124,37 +132,45 @@ class ChatRoomInvitationTestBase(APITestCase):
         ChatParticipant.objects.create(chatroom=self.chatroom1, user=self.user1)
         Friendship.objects.create(from_user=self.user1,to_user=self.user2,status="accepted")
 
+# 채팅방 초대 테스트 클래스
 class ChatRoomInvitationTest(ChatRoomInvitationTestBase):
+
+    # 채팅방 차단 상태일 때 초대 가능 여부 테스트
     def test_invitable_when_chatroom_blocked(self):
         InvitationBlock.objects.create(blocking_user=self.user2,blocked_chatroom=self.chatroom1)
         is_invitable, msg = ChatRoomInvitationService.check_invitable_state(self.chatroom1.id,self.user1.id,self.user2.id)
         self.assertFalse(is_invitable)
         self.assertEqual(msg,"This user has blocked invitations to this chatroom.")
     
+    # 초대자 차단 상태일 때 초대 가능 여부 테스트
     def test_invitable_when_inviter_blocked(self):
         UserBlock.objects.create(blocker=self.user2,blocked_user=self.user1)
         is_invitable, msg = ChatRoomInvitationService.check_invitable_state(self.chatroom1.id,self.user1.id,self.user2.id)
         self.assertFalse(is_invitable)
         self.assertEqual(msg,"This user has blocked the inviter.")
     
+    # 초대 대기 상태일 때 초대 가능 여부 테스트
     def test_invitable_when_hpending(self):
         Invitation.objects.create(chatroom=self.chatroom1,from_user=self.user1,to_user=self.user2,status="h_pending")
         is_invitable, msg = ChatRoomInvitationService.check_invitable_state(self.chatroom1.id,self.user1.id,self.user2.id)
         self.assertFalse(is_invitable)
         self.assertEqual(msg,"User has already been invited.")
     
+    # 초대 대기 상태일 때 초대 가능 여부 테스트
     def test_invitable_when_pending(self):
         Invitation.objects.create(chatroom=self.chatroom1,from_user=self.user1,to_user=self.user2,status="pending")
         is_invitable, msg = ChatRoomInvitationService.check_invitable_state(self.chatroom1.id,self.user1.id,self.user2.id)
         self.assertFalse(is_invitable)
         self.assertEqual(msg,"User has already been invited.")
     
+    # 초대 수락 상태일 때 초대 가능 여부 테스트
     def test_invitable_when_accepted(self):
         Invitation.objects.create(chatroom=self.chatroom1,from_user=self.user1,to_user=self.user2,status="accepted")
         is_invitable, msg = ChatRoomInvitationService.check_invitable_state(self.chatroom1.id,self.user1.id,self.user2.id)
         self.assertFalse(is_invitable)
         self.assertEqual(msg,"User has already been invited.")
 
+    # 채팅방 주인이 친구 초대 테스트
     def test_invite_friend_for_host(self): 
         self.client.force_login(self.user1)
 
@@ -162,6 +178,7 @@ class ChatRoomInvitationTest(ChatRoomInvitationTestBase):
         response = self.client.post(url, {}, format="json")
         self.assertEqual(response.status_code,201)
     
+    # 채팅방 참여자가 친구 초대 테스트
     def test_invite_friend_for_guest(self):
         self.client.force_login(self.user2)
 
@@ -171,3 +188,5 @@ class ChatRoomInvitationTest(ChatRoomInvitationTestBase):
         url = reverse('chatroom:invite_friend_for_guest',args=[self.chatroom1.id,self.user3.id])
         response = self.client.post(url, {}, format="json")
         self.assertEqual(response.status_code,201)
+
+
