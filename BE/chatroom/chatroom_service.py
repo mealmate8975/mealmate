@@ -218,26 +218,26 @@ class ChatRoomInvitationService:
         invitation_instance.save()
         return True, "Invitation approved successfully."
 
-    def accept_invitation(invitation_pk,user):
+    def accept_invitation(invitation_id,user):
         """
         초대 받은 친구가 초대를 수락합니다.
         """
-        invitation = get_object_or_404(Invitation,pk=invitation_pk,status='pending')
+        invitation = get_object_or_404(Invitation,pk=invitation_id,status='pending')
 
-        # 초대를 수락하면        Participants 테이블과 ChatParticipant 테이블에 해당 레코드 추가
+        # 초대를 수락하면 Participants 테이블에 해당 레코드 추가
         with transaction.atomic():
             invitation.status = 'accepted'
             invitation.save()
-
             schedule_instance = invitation.schedule
+            Participants.objects.create(schedule=schedule_instance,participant=user)
+            return True, "Invitation accepted successfully."
 
-            Participants.objects.create(schedule=schedule_instance,participant__id=user.id)
-
-    def reject_invitation(invitation_pk):
+    def reject_invitation(invitation_id):
         """
         초대 받은 친구가 초대를 거절합니다.
         """
-        invitation = get_object_or_404(Invitation,pk=invitation_pk,status='pending')
+        invitation = get_object_or_404(Invitation,pk=invitation_id,status='pending')
         invitation.status = 'rejected'
         invitation.save()
+        return True, "Invitation rejected successfully."
         

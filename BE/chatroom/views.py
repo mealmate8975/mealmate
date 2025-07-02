@@ -121,3 +121,35 @@ class ApproveInvitationView(APIView):
         if not success:
             return Response({"detail": message}, status=403) # 존재하지 않는 Schedule이나 Invitation이면 Django가 자동으로 404 리턴
         return Response(status=200)
+    
+class AcceptInvitationView(APIView):
+    """
+    초대를 허락하는 로직의 APIView
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self,request,invitation_id):
+        print(f"[DEBUG][VIEW] invitation_id={invitation_id}")
+
+        success,message = ChatRoomInvitationService.accept_invitation(invitation_id,request.user)
+        print(f"[DEBUG][VIEW] success={success}, message={message}")
+
+        if not success:
+            return Response({"detail": message}, status=400)
+        return Response(status=201)
+
+class RejectInvitationView(APIView):
+    """
+    초대를 거절하는 로직의 APIView
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self,request,invitation_id):
+        print(f"[DEBUG][VIEW] invitation_id={invitation_id}")
+
+        success,message = ChatRoomInvitationService.reject_invitation(invitation_id)
+        print(f"[DEBUG][VIEW] success={success}, message={message}")
+
+        if not success:
+            return Response({"detail": message}, status=400)
+        return Response(status=200)
