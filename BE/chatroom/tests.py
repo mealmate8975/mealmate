@@ -37,19 +37,19 @@ class ChatRoomTestBase(APITestCase):
 
         # confirmed schedule 
         # host : user1 / guest : user2
-        self.schedule_confirmed1 = Schedules.objects.create(created_by=self.user1, schedule_start=self.one_hour_later, with_chatroom=True)
+        self.schedule_confirmed1 = Schedules.objects.create(created_by=self.user1, schedule_start=self.one_hour_later, is_chatroom=True)
         self.chatroom_confirmed1 = ChatRoom.objects.create(schedule=self.schedule_confirmed1)
         ChatParticipant.objects.create(chatroom=self.chatroom_confirmed1, user=self.user1)
         ChatParticipant.objects.create(chatroom=self.chatroom_confirmed1, user=self.user2)
         # host : user3 / guest : user1
-        self.schedule_confirmed2 = Schedules.objects.create(created_by=self.user3, schedule_start=self.one_hour_later, with_chatroom=True)
+        self.schedule_confirmed2 = Schedules.objects.create(created_by=self.user3, schedule_start=self.one_hour_later, is_chatroom=True)
         self.chatroom_confirmed2 = ChatRoom.objects.create(schedule=self.schedule_confirmed2)
         ChatParticipant.objects.create(chatroom=self.chatroom_confirmed2, user=self.user3)
         ChatParticipant.objects.create(chatroom=self.chatroom_confirmed2, user=self.user1)
 
         # unconfirmed schedule
         # host : user1 / guest : user2
-        self.schedule_unconfirmed = Schedules.objects.create(created_by=self.user1, schedule_start=None, with_chatroom=True)
+        self.schedule_unconfirmed = Schedules.objects.create(created_by=self.user1, schedule_start=None, is_chatroom=True)
         self.chatroom_unconfirmed = ChatRoom.objects.create(schedule=self.schedule_unconfirmed)
         ChatParticipant.objects.create(chatroom=self.chatroom_unconfirmed, user=self.user1)
         ChatParticipant.objects.create(chatroom=self.chatroom_unconfirmed, user=self.user2)
@@ -61,7 +61,7 @@ class GetChatroomTest(ChatRoomTestBase):
     def test_ongoing(self):
         # ongoing schedule
         # host : user1 / guest : user2
-        self.schedule_ongoing = Schedules.objects.create(created_by=self.user1,schedule_start=self.one_hour_before,schedule_end=self.one_hour_later,with_chatroom=True)
+        self.schedule_ongoing = Schedules.objects.create(created_by=self.user1,schedule_start=self.one_hour_before,schedule_end=self.one_hour_later,is_chatroom=True)
         self.chatroom_ongoing = ChatRoom.objects.create(schedule=self.schedule_ongoing)
         ChatParticipant.objects.create(chatroom=self.chatroom_ongoing, user=self.user1)
         ChatParticipant.objects.create(chatroom=self.chatroom_ongoing, user=self.user2)
@@ -78,7 +78,7 @@ class GetChatroomTest(ChatRoomTestBase):
     def test_confirmed_excluding_ongoing(self):
         # ongoing schedule
         # host : user1 / guest : user2
-        self.schedule_ongoing = Schedules.objects.create(created_by=self.user1,schedule_start=self.one_hour_before,schedule_end=self.one_hour_later,with_chatroom=True)
+        self.schedule_ongoing = Schedules.objects.create(created_by=self.user1,schedule_start=self.one_hour_before,schedule_end=self.one_hour_later,is_chatroom=True)
         self.chatroom_ongoing = ChatRoom.objects.create(schedule=self.schedule_ongoing)
         ChatParticipant.objects.create(chatroom=self.chatroom_ongoing, user=self.user1)
         ChatParticipant.objects.create(chatroom=self.chatroom_ongoing, user=self.user2)
@@ -127,7 +127,7 @@ class ChatRoomInvitationTestBase(APITestCase):
         self.user3.set_password("pass")
         self.user3.save()
 
-        self.schedule1 = Schedules.objects.create(created_by=self.user1, with_chatroom=True)
+        self.schedule1 = Schedules.objects.create(created_by=self.user1, is_chatroom=True)
         self.chatroom1 = ChatRoom.objects.create(schedule=self.schedule1)
         ChatParticipant.objects.create(chatroom=self.chatroom1, user=self.user1)
         Friendship.objects.create(from_user=self.user1,to_user=self.user2,status="accepted")
