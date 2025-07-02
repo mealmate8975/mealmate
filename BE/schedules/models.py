@@ -17,5 +17,5 @@ class Schedules(models.Model):
     schedule_end = models.DateTimeField(null=True,blank=True)
     is_meal = models.BooleanField(default=True)
 
-    # 채팅방 생성 필요 여부
-    with_chatroom = models.BooleanField(default=False)
+    # 채팅방인지 여부(채팅방이 아닐 경우 개인 스케줄)
+    is_chatroom = models.BooleanField(default=False)

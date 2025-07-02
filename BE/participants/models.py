@@ -16,5 +16,8 @@ class Participants(models.Model):
         # null=True,
         # blank=True
     )
+    is_host = models.BooleanField(default=False)
+    joined_at = models.DateTimeField(auto_now_add=True)
+
     class Meta:
         unique_together = ('schedule', 'participant')
