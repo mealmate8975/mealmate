@@ -123,13 +123,11 @@ class ChatRoomInvitationTestBase(APITestCase):
         self.user3.save()
 
         self.schedule1 = Schedules.objects.create(created_by=self.user1, is_chatroom=True)
-        self.schedule1 = Schedules.objects.create(created_by=self.user1, is_chatroom=True)
         Participants.objects.create(schedule=self.schedule1, participant=self.user1, is_host=True)
         Friendship.objects.create(from_user=self.user1,to_user=self.user2,status="accepted")
 
 # 채팅방 초대 테스트 클래스
 class ChatRoomInvitationTest(ChatRoomInvitationTestBase):
-
     # 채팅방 차단 상태일 때 초대 가능 여부 테스트
     def test_invitable_when_chatroom_blocked(self):
         InvitationBlock.objects.create(blocking_user=self.user2,blocked_schedule=self.schedule1)
@@ -183,3 +181,13 @@ class ChatRoomInvitationTest(ChatRoomInvitationTestBase):
         url = reverse('chatroom:invite_friend_for_guest',args=[self.schedule1.schedule_id,self.user3.id])
         response = self.client.post(url, {}, format="json")
         self.assertEqual(response.status_code,201)
+    
+    def test_approve_invitation(self):
+        Friendship.objects.create(from_user=self.user2,to_user=self.user3,status="accepted")
+        Invitation.objects.create(schedule=self.schedule1,from_user=self.user2,to_user=self.user3,status="h_pending")
+
+        self.client.force_login(self.user1)
+
+        url = reverse('chatroom:approve_invitation',args=[self.schedule1.schedule_id,self.user2.id,self.user3.id])
+        response = self.client.post(url, {}, format="json")
+        self.assertEqual(response.status_code,200)

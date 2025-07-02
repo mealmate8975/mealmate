@@ -105,3 +105,19 @@ class InviteFriendForGuestView(APIView):
         if not success:
             return Response({"detail": message}, status=400)
         return Response(status=201)
+
+class ApproveInvitationView(APIView):
+    """
+    호스트가 게스트의 친구 초대를 허락하는 로직의 APIView
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def post(self,request,schedule_id,guest_id,target_user_id):
+        print(f"[DEBUG][VIEW] schedule_id={schedule_id}, guest_id={guest_id}, target_user_id={target_user_id}")
+
+        success,message = ChatRoomInvitationService.approve_invitation(request.user,schedule_id,guest_id,target_user_id)
+        print(f"[DEBUG][VIEW] success={success}, message={message}")
+
+        if not success:
+            return Response({"detail": message}, status=403) # 존재하지 않는 Schedule이나 Invitation이면 Django가 자동으로 404 리턴
+        return Response(status=200)

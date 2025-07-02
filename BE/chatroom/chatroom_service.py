@@ -100,8 +100,7 @@ class ChatRoomService:
         return {'exists': True, 'is_participant': is_participant}
 
 
-# 호스트와 게스트 모두 채팅방에 친구를 초대할 수 있음 
-# (단, 게스트는 호스트의 승인 있을 경우에만 초대 가능)
+# 호스트와 게스트 모두 채팅방에 친구를 초대할 수 있음 (단, 게스트는 호스트의 승인 있을 경우에만 초대 가능)
 class ChatRoomInvitationService:
     @staticmethod
     def check_invitable_state(chatroom_id,inviter_id,target_user_id):
@@ -188,13 +187,36 @@ class ChatRoomInvitationService:
         return True,"Invitation request to host sent successfully."
     
     @staticmethod
-    def approve_invitation(chatroom_id,guest_id,target_user_id):
+    def check_is_host(user,schedule_instance):
+        """
+        로그인 중인 유저가 해당 스케줄의 호스트가 맞는지 확인
+        """
+        if schedule_instance.created_by == user:
+            return True
+        else:
+            return False
+    
+    @staticmethod
+    def approve_invitation(user,schedule_id,guest_id,target_user_id):
         """
         호스트가 게스트의 친구 초대를 허락(status : h_pending -> pending)
         """
-        invitation = get_object_or_404(Invitation,schedule_id=chatroom_id,from_user__id=guest_id,to_user__id=target_user_id,status='h_pending')
-        invitation.status = 'pending'
-        invitation.save()
+        schedule_instance = get_object_or_404(Schedules,pk=schedule_id)
+
+        # 로그인 중인 유저가 해당 스케줄의 호스트가 맞는지 확인
+        is_host = ChatRoomInvitationService.check_is_host(user,schedule_instance)
+        if is_host is False:
+            return False, "Only the host can approve guest invitations."
+
+        invitation_instance = get_object_or_404(
+            Invitation,schedule=schedule_instance,
+            from_user__id=guest_id,
+            to_user__id=target_user_id,
+            status='h_pending'
+        )
+        invitation_instance.status = 'pending'
+        invitation_instance.save()
+        return True, "Invitation approved successfully."
 
     def accept_invitation(invitation_pk,user):
         """
