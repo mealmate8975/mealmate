@@ -16,7 +16,6 @@ from rest_framework.exceptions import PermissionDenied
 from itertools import chain
 from rest_framework.exceptions import ValidationError
 from django.db.models import Q
-from chatroom.models import ChatRoom
 
 class ScheduleCommandService:
     @staticmethod
@@ -28,7 +27,7 @@ class ScheduleCommandService:
         schedule = serializer.save(created_by=user)
 
         if with_chatroom:
-            ChatRoom.objects.create(schedule=schedule)
+            Schedules.objects.create(schedule=schedule)
 
         return ScheduleSerializer(schedule).data
     @staticmethod

@@ -14,7 +14,6 @@ from rest_framework import status
 from rest_framework.views import APIView
 
 from .chatroom_service import ChatRoomService, ChatRoomQueryService, ChatRoomInvitationService
-from .serializers import ChatRoomSerializer
 from schedules.models import Schedules
 from schedules.serializers import ScheduleSerializer
 
@@ -42,7 +41,7 @@ class ConfirmedChatRoomsView(APIView):
     def get(self, request):
         user = request.user
         time_confirmed_excluding_ongoing_chatrooms = ChatRoomQueryService.get_time_confirmed_chatrooms_excluding_ongoing(user)
-        serializer = ChatRoomSerializer(time_confirmed_excluding_ongoing_chatrooms, many=True)
+        serializer = ScheduleSerializer(time_confirmed_excluding_ongoing_chatrooms, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -53,7 +52,7 @@ class UnconfirmedChatRoomsView(APIView):
     def get(self, request):
         user = request.user
         unconfirmed_chatrooms = ChatRoomQueryService.get_time_unconfirmed_chatrooms(user)
-        serializer = ChatRoomSerializer(unconfirmed_chatrooms, many=True)
+        serializer = ScheduleSerializer(unconfirmed_chatrooms, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 # 현재 진행중인 채팅방 조회
@@ -63,7 +62,7 @@ class OnGoingChatRoomsView(APIView):
     def get(self, request):
         user = request.user
         ongoing_chatrooms = ChatRoomQueryService.get_ongoing_chatroom(user)
-        serializer = ChatRoomSerializer(ongoing_chatrooms)
+        serializer = ScheduleSerializer(ongoing_chatrooms)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 

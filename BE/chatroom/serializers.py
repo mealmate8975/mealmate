@@ -1,17 +1,17 @@
-from .models import ChatRoom, ChatParticipant, Invitation, InvitationBlock
+from .models import Invitation, InvitationBlock
 from rest_framework import serializers
 
-class ChatRoomSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ChatRoom
-        fields = ['id', 'schedule']
-        read_only_fields = ['id', 'schedule']
+# class ChatRoomSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = ChatRoom
+#         fields = ['id', 'schedule']
+#         read_only_fields = ['id', 'schedule']
 
-class ChatParticipantSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ChatParticipant
-        fields = ['id', 'chatroom', 'user', 'joined_at']
-        read_only_fields = ['id', 'joined_at']
+# class ChatParticipantSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = ChatParticipant
+#         fields = ['id', 'chatroom', 'user', 'joined_at']
+#         read_only_fields = ['id', 'joined_at']
 
 class InvitationSerializer(serializers.ModelSerializer):
     class Meta:

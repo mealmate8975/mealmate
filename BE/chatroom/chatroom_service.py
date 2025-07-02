@@ -10,13 +10,12 @@ views.py
 
 from django.shortcuts import render
 from django.utils import timezone
-from .serializers import ChatRoomSerializer
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from friendships.views import FriendRequestService
 from django.contrib.auth import get_user_model
 
-from .models import ChatRoom, ChatParticipant,Invitation,InvitationBlock
+from .models import Invitation,InvitationBlock
 from schedules.models import Schedules
 from accounts.models import UserBlock
 from friendships.models import Friendship
@@ -30,7 +29,7 @@ class ChatRoomQueryService:
         '''
         로그인한 유저가 속해있는 채팅방에 대응되는 스케줄 찾기
         '''
-        chatroom_ids = ChatParticipant.objects.filter(user=user).values_list('chatroom', flat=True)
+        chatroom_ids = Participants.objects.filter(participant=user).values_list('schedule', flat=True)
         schedule_queryset = Schedules.objects.filter(schedule_id__in=chatroom_ids)
         return schedule_queryset
     
@@ -45,7 +44,7 @@ class ChatRoomQueryService:
         '''
         schedule_queryset = ChatRoomQueryService.get_user_schedules(user)
         time_confirmed_schedule_ids = schedule_queryset.filter(schedule_start__isnull=False).values_list('schedule_id', flat=True)
-        time_confirmed_chatrooms = ChatRoom.objects.filter(schedule__schedule_id__in=time_confirmed_schedule_ids)
+        time_confirmed_chatrooms = Schedules.objects.filter(schedule_id__in=time_confirmed_schedule_ids)
         return time_confirmed_chatrooms
 
     @staticmethod
@@ -55,7 +54,7 @@ class ChatRoomQueryService:
         '''
         schedule_queryset = ChatRoomQueryService.get_user_schedules(user)
         time_unconfirmed_schedule_ids = schedule_queryset.filter(schedule_start__isnull=True).values_list('schedule_id', flat=True)
-        time_unconfirmed_chatrooms = ChatRoom.objects.filter(schedule__schedule_id__in=time_unconfirmed_schedule_ids)
+        time_unconfirmed_chatrooms = Schedules.objects.filter(schedule_id__in=time_unconfirmed_schedule_ids)
         return time_unconfirmed_chatrooms
 
     @staticmethod
@@ -64,8 +63,8 @@ class ChatRoomQueryService:
         확정된 시작 시간을 가진 채팅방 중 진행중인 채팅방 가져오기
         """
         time_confirmed_chatrooms = ChatRoomQueryService.get_time_confirmed_chatrooms(user)
-        ongoing_chatrooms = time_confirmed_chatrooms.filter(schedule__schedule_start__lt=timezone.now()).exclude(schedule__schedule_end__lte=timezone.now())
-        latest_chatroom = ongoing_chatrooms.order_by('-schedule__schedule_start').first()
+        ongoing_chatrooms = time_confirmed_chatrooms.filter(schedule_start__lt=timezone.now()).exclude(schedule_end__lte=timezone.now())
+        latest_chatroom = ongoing_chatrooms.order_by('-schedule_start').first()
         return latest_chatroom
        
     @staticmethod
@@ -77,9 +76,9 @@ class ChatRoomQueryService:
 
         # 진행 중인 것 중 최신 하나만 찾아냄
         ongoing = time_confirmed.filter(
-            schedule__schedule_start__lt=timezone.now(),
-            schedule__schedule_end__gt=timezone.now(),
-        ).order_by('-schedule__schedule_start')
+            schedule_start__lt=timezone.now(),
+            schedule_end__gt=timezone.now(),
+        ).order_by('-schedule_start')
 
         latest_ongoing = ongoing.first()
         result = time_confirmed.exclude(pk=latest_ongoing.pk if latest_ongoing else None)
@@ -92,11 +91,11 @@ class ChatRoomService:
         해당 채팅방에 사용자가 참가자인지 확인
         """
         try:
-            chatroom = ChatRoom.objects.get(id=chatroom_id)
-        except ChatRoom.DoesNotExist:
+            chatroom = Schedules.objects.get(schedule_id=chatroom_id)
+        except Schedules.DoesNotExist:
             return {'exists': False, 'is_participant': False}
 
-        is_participant = ChatParticipant.objects.filter(chatroom=chatroom, user=user).exists()
+        is_participant = Participants.objects.filter(schedule=chatroom, user=user).exists()
 
         return {'exists': True, 'is_participant': is_participant}
 
@@ -110,7 +109,7 @@ class ChatRoomInvitationService:
         초대 가능한 상태인지 확인하는 로직
         """        
         # 1. target user가 채팅방에 대한 초대 차단을 한 경우
-        chatroom_blocked = InvitationBlock.objects.filter(blocking_user=target_user_id,blocked_chatroom=chatroom_id).exists()
+        chatroom_blocked = InvitationBlock.objects.filter(blocking_user=target_user_id,blocked_schedule=chatroom_id).exists()
         if chatroom_blocked:
             return False, "This user has blocked invitations to this chatroom."
         
@@ -121,7 +120,7 @@ class ChatRoomInvitationService:
         
         # 3. 이미 보낸 초대가 존재하는 경우
         existing_invitation = Invitation.objects.filter(
-        chatroom=chatroom_id,
+        schedule=chatroom_id,
         from_user__id=inviter_id,
         to_user=target_user_id,
         status__in=['h_pending','pending','accepted']).exists()
@@ -158,11 +157,11 @@ class ChatRoomInvitationService:
         if not is_invitable:
             return False, invite_msg
         
-        chatroom = get_object_or_404(ChatRoom, id=chatroom_id)
+        chatroom = get_object_or_404(Schedules, schedule_id=chatroom_id)
         to_user = get_object_or_404(User,id=target_user_id)
         
         Invitation.objects.create(
-            chatroom=chatroom,
+            schedule=chatroom,
             from_user=host,
             to_user=to_user,
             status='pending')
@@ -182,10 +181,10 @@ class ChatRoomInvitationService:
         if not is_invitable:
             return False, invite_msg
         
-        chatroom = get_object_or_404(ChatRoom,pk=chatroom_id)
+        chatroom = get_object_or_404(Schedules,pk=chatroom_id)
         to_user = get_object_or_404(User,pk=target_user_id)
 
-        Invitation.objects.create(chatroom=chatroom,from_user=guest,to_user=to_user,status='h_pending')
+        Invitation.objects.create(schedule=chatroom,from_user=guest,to_user=to_user,status='h_pending')
         return True,"Invitation request to host sent successfully."
     
     @staticmethod
@@ -193,7 +192,7 @@ class ChatRoomInvitationService:
         """
         호스트가 게스트의 친구 초대를 허락(status : h_pending -> pending)
         """
-        invitation = get_object_or_404(Invitation,chatroom__id=chatroom_id,from_user__id=guest_id,to_user__id=target_user_id,status='h_pending')
+        invitation = get_object_or_404(Invitation,schedule_id=chatroom_id,from_user__id=guest_id,to_user__id=target_user_id,status='h_pending')
         invitation.status = 'pending'
         invitation.save()
 
@@ -208,11 +207,9 @@ class ChatRoomInvitationService:
             invitation.status = 'accepted'
             invitation.save()
 
-            chatroom_instance = invitation.chatroom
-            schedule_instance = chatroom_instance.schedule
+            schedule_instance = invitation.schedule
 
             Participants.objects.create(schedule=schedule_instance,participant__id=user.id)
-            ChatParticipant.objects.create(chatroom=chatroom_instance,user=user)
 
     def reject_invitation(invitation_pk):
         """

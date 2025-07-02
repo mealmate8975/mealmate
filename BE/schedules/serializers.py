@@ -14,7 +14,7 @@ class ScheduleSerializer(serializers.ModelSerializer):
             'schedule_end',
             'is_meal',
             'schedule_condition',
-            'with_chatroom'
+            'is_chatroom'
         ]
         read_only_fields = ('created_by',)
     def validate(self, data):

@@ -4,11 +4,11 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from datetime import timedelta
 
-from chatroom.models import ChatParticipant,ChatRoom,InvitationBlock,Invitation
+from chatroom.models import InvitationBlock,Invitation
 from schedules.models import Schedules
 from friendships.models import Friendship
 from accounts.models import UserBlock
-# from participants.models import Participants
+from participants.models import Participants
 
 from chatroom.chatroom_service import ChatRoomInvitationService
 
@@ -38,40 +38,36 @@ class ChatRoomTestBase(APITestCase):
         # confirmed schedule 
         # host : user1 / guest : user2
         self.schedule_confirmed1 = Schedules.objects.create(created_by=self.user1, schedule_start=self.one_hour_later, is_chatroom=True)
-        self.chatroom_confirmed1 = ChatRoom.objects.create(schedule=self.schedule_confirmed1)
-        ChatParticipant.objects.create(chatroom=self.chatroom_confirmed1, user=self.user1)
-        ChatParticipant.objects.create(chatroom=self.chatroom_confirmed1, user=self.user2)
+        Participants.objects.create(schedule=self.schedule_confirmed1, participant=self.user1)
+        Participants.objects.create(schedule=self.schedule_confirmed1, participant=self.user2)
+
         # host : user3 / guest : user1
         self.schedule_confirmed2 = Schedules.objects.create(created_by=self.user3, schedule_start=self.one_hour_later, is_chatroom=True)
-        self.chatroom_confirmed2 = ChatRoom.objects.create(schedule=self.schedule_confirmed2)
-        ChatParticipant.objects.create(chatroom=self.chatroom_confirmed2, user=self.user3)
-        ChatParticipant.objects.create(chatroom=self.chatroom_confirmed2, user=self.user1)
+        Participants.objects.create(schedule=self.schedule_confirmed2, participant=self.user3)
+        Participants.objects.create(schedule=self.schedule_confirmed2, participant=self.user1)
 
         # unconfirmed schedule
         # host : user1 / guest : user2
         self.schedule_unconfirmed = Schedules.objects.create(created_by=self.user1, schedule_start=None, is_chatroom=True)
-        self.chatroom_unconfirmed = ChatRoom.objects.create(schedule=self.schedule_unconfirmed)
-        ChatParticipant.objects.create(chatroom=self.chatroom_unconfirmed, user=self.user1)
-        ChatParticipant.objects.create(chatroom=self.chatroom_unconfirmed, user=self.user2)
+        Participants.objects.create(schedule=self.schedule_unconfirmed, participant=self.user1)
+        Participants.objects.create(schedule=self.schedule_unconfirmed, participant=self.user2)
 
 # 채팅방 테스트 클래스
 class GetChatroomTest(ChatRoomTestBase):
-    
     # 현재 진행중인 채팅방 조회
     def test_ongoing(self):
         # ongoing schedule
         # host : user1 / guest : user2
         self.schedule_ongoing = Schedules.objects.create(created_by=self.user1,schedule_start=self.one_hour_before,schedule_end=self.one_hour_later,is_chatroom=True)
-        self.chatroom_ongoing = ChatRoom.objects.create(schedule=self.schedule_ongoing)
-        ChatParticipant.objects.create(chatroom=self.chatroom_ongoing, user=self.user1)
-        ChatParticipant.objects.create(chatroom=self.chatroom_ongoing, user=self.user2)
+        Participants.objects.create(schedule=self.schedule_ongoing, participant=self.user1)
+        Participants.objects.create(schedule=self.schedule_ongoing, participant=self.user2)
         
         url = reverse('chatroom:ongoing')
         response = self.client.get(url)
         response_data = response.json()
         # print(response_data)
-        chatroom_id = response_data['id']
-        self.assertEqual(self.chatroom_ongoing.id,chatroom_id)
+        chatroom_id = response_data['schedule_id']
+        self.assertEqual(self.schedule_ongoing.schedule_id,chatroom_id)
         self.assertEqual(response.status_code, 200)
 
     # 현재 진행중인 채팅방 제외하고 확정된 채팅방 조회
@@ -79,17 +75,16 @@ class GetChatroomTest(ChatRoomTestBase):
         # ongoing schedule
         # host : user1 / guest : user2
         self.schedule_ongoing = Schedules.objects.create(created_by=self.user1,schedule_start=self.one_hour_before,schedule_end=self.one_hour_later,is_chatroom=True)
-        self.chatroom_ongoing = ChatRoom.objects.create(schedule=self.schedule_ongoing)
-        ChatParticipant.objects.create(chatroom=self.chatroom_ongoing, user=self.user1)
-        ChatParticipant.objects.create(chatroom=self.chatroom_ongoing, user=self.user2)
+        Participants.objects.create(schedule=self.schedule_ongoing, participant=self.user1)
+        Participants.objects.create(schedule=self.schedule_ongoing, participant=self.user2)
 
         url = reverse('chatroom:confirmed-ongoing')
         response = self.client.get(url)
         response_data = response.json()
         # print(response_data)
         self.assertEqual(len(response_data),2) # 3 - 1 = 2
-        chatroom_ids = [chatroom['id'] for chatroom in response_data]
-        self.assertNotIn(self.chatroom_ongoing.id, chatroom_ids)
+        chatroom_ids = [chatroom['schedule_id'] for chatroom in response_data]
+        self.assertNotIn(self.schedule_ongoing.schedule_id, chatroom_ids)
         self.assertEqual(response.status_code, 200)
     
     # 확정된 채팅방 조회 (확정된 채팅방이 없는 경우)
@@ -108,8 +103,8 @@ class GetChatroomTest(ChatRoomTestBase):
         response_data = response.json()
         # print(response_data)
         self.assertEqual(len(response_data),1)
-        chatroom_ids = [chatroom['id'] for chatroom in response_data]
-        self.assertIn(self.chatroom_unconfirmed.id, chatroom_ids)
+        chatroom_ids = [chatroom['schedule_id'] for chatroom in response_data]
+        self.assertIn(self.schedule_unconfirmed.schedule_id, chatroom_ids)
         self.assertEqual(response.status_code, 200)
 
 # 채팅방 초대 테스트 기본 클래스
@@ -128,8 +123,8 @@ class ChatRoomInvitationTestBase(APITestCase):
         self.user3.save()
 
         self.schedule1 = Schedules.objects.create(created_by=self.user1, is_chatroom=True)
-        self.chatroom1 = ChatRoom.objects.create(schedule=self.schedule1)
-        ChatParticipant.objects.create(chatroom=self.chatroom1, user=self.user1)
+        self.schedule1 = Schedules.objects.create(created_by=self.user1, is_chatroom=True)
+        Participants.objects.create(schedule=self.schedule1, participant=self.user1, is_host=True)
         Friendship.objects.create(from_user=self.user1,to_user=self.user2,status="accepted")
 
 # 채팅방 초대 테스트 클래스
@@ -137,36 +132,36 @@ class ChatRoomInvitationTest(ChatRoomInvitationTestBase):
 
     # 채팅방 차단 상태일 때 초대 가능 여부 테스트
     def test_invitable_when_chatroom_blocked(self):
-        InvitationBlock.objects.create(blocking_user=self.user2,blocked_chatroom=self.chatroom1)
-        is_invitable, msg = ChatRoomInvitationService.check_invitable_state(self.chatroom1.id,self.user1.id,self.user2.id)
+        InvitationBlock.objects.create(blocking_user=self.user2,blocked_schedule=self.schedule1)
+        is_invitable, msg = ChatRoomInvitationService.check_invitable_state(self.schedule1.schedule_id,self.user1.id,self.user2.id)
         self.assertFalse(is_invitable)
         self.assertEqual(msg,"This user has blocked invitations to this chatroom.")
     
     # 초대자 차단 상태일 때 초대 가능 여부 테스트
     def test_invitable_when_inviter_blocked(self):
         UserBlock.objects.create(blocker=self.user2,blocked_user=self.user1)
-        is_invitable, msg = ChatRoomInvitationService.check_invitable_state(self.chatroom1.id,self.user1.id,self.user2.id)
+        is_invitable, msg = ChatRoomInvitationService.check_invitable_state(self.schedule1.schedule_id,self.user1.id,self.user2.id)
         self.assertFalse(is_invitable)
         self.assertEqual(msg,"This user has blocked the inviter.")
     
     # 초대 대기 상태일 때 초대 가능 여부 테스트
     def test_invitable_when_hpending(self):
-        Invitation.objects.create(chatroom=self.chatroom1,from_user=self.user1,to_user=self.user2,status="h_pending")
-        is_invitable, msg = ChatRoomInvitationService.check_invitable_state(self.chatroom1.id,self.user1.id,self.user2.id)
+        Invitation.objects.create(schedule=self.schedule1,from_user=self.user1,to_user=self.user2,status="h_pending")
+        is_invitable, msg = ChatRoomInvitationService.check_invitable_state(self.schedule1.schedule_id,self.user1.id,self.user2.id)
         self.assertFalse(is_invitable)
         self.assertEqual(msg,"User has already been invited.")
     
     # 초대 대기 상태일 때 초대 가능 여부 테스트
     def test_invitable_when_pending(self):
-        Invitation.objects.create(chatroom=self.chatroom1,from_user=self.user1,to_user=self.user2,status="pending")
-        is_invitable, msg = ChatRoomInvitationService.check_invitable_state(self.chatroom1.id,self.user1.id,self.user2.id)
+        Invitation.objects.create(schedule=self.schedule1,from_user=self.user1,to_user=self.user2,status="pending")
+        is_invitable, msg = ChatRoomInvitationService.check_invitable_state(self.schedule1.schedule_id,self.user1.id,self.user2.id)
         self.assertFalse(is_invitable)
         self.assertEqual(msg,"User has already been invited.")
     
     # 초대 수락 상태일 때 초대 가능 여부 테스트
     def test_invitable_when_accepted(self):
-        Invitation.objects.create(chatroom=self.chatroom1,from_user=self.user1,to_user=self.user2,status="accepted")
-        is_invitable, msg = ChatRoomInvitationService.check_invitable_state(self.chatroom1.id,self.user1.id,self.user2.id)
+        Invitation.objects.create(schedule=self.schedule1,from_user=self.user1,to_user=self.user2,status="accepted")
+        is_invitable, msg = ChatRoomInvitationService.check_invitable_state(self.schedule1.schedule_id,self.user1.id,self.user2.id)
         self.assertFalse(is_invitable)
         self.assertEqual(msg,"User has already been invited.")
 
@@ -174,7 +169,7 @@ class ChatRoomInvitationTest(ChatRoomInvitationTestBase):
     def test_invite_friend_for_host(self): 
         self.client.force_login(self.user1)
 
-        url = reverse('chatroom:invite_friend_for_host', args=[self.chatroom1.id, self.user2.id])
+        url = reverse('chatroom:invite_friend_for_host', args=[self.schedule1.schedule_id, self.user2.id])
         response = self.client.post(url, {}, format="json")
         self.assertEqual(response.status_code,201)
     
@@ -182,11 +177,9 @@ class ChatRoomInvitationTest(ChatRoomInvitationTestBase):
     def test_invite_friend_for_guest(self):
         self.client.force_login(self.user2)
 
-        ChatParticipant.objects.create(chatroom=self.chatroom1, user=self.user2)
+        Participants.objects.create(schedule=self.schedule1, participant=self.user2)
         Friendship.objects.create(from_user=self.user2,to_user=self.user3,status="accepted")
 
-        url = reverse('chatroom:invite_friend_for_guest',args=[self.chatroom1.id,self.user3.id])
+        url = reverse('chatroom:invite_friend_for_guest',args=[self.schedule1.schedule_id,self.user3.id])
         response = self.client.post(url, {}, format="json")
         self.assertEqual(response.status_code,201)
-
-
