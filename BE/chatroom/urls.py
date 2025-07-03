@@ -11,6 +11,7 @@ from .views import (
     AcceptInvitationView,
     RejectInvitationView,
     내가받은초대리스트조회View,
+    나의승인을기다리고있는초대리스트조회View,
 )
 
 app_name = "chatroom"
@@ -27,4 +28,5 @@ urlpatterns = [
     path('chatrooms/accept-invitation/<int:invitation_id>',AcceptInvitationView.as_view(),name='accept_invitation'),
     path('chatrooms/reject-invitation/<int:invitation_id>',RejectInvitationView.as_view(),name='reject_invitation'),
     path('chatrooms/내가받은초대리스트조회',내가받은초대리스트조회View.as_view(),name='내가받은초대리스트조회'),
+    path('chatrooms/나의승인을기다리고있는초대리스트조회',나의승인을기다리고있는초대리스트조회View.as_view(),name='나의승인을기다리고있는초대리스트조회'),
 ]

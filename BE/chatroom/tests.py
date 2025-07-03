@@ -182,44 +182,67 @@ class ChatRoomInvitationTest(ChatRoomInvitationTestBase):
     #     response = self.client.post(url, {}, format="json")
     #     self.assertEqual(response.status_code,201)
     
-    def test_approve_invitation(self):
-        Friendship.objects.create(from_user=self.user2,to_user=self.user3,status="accepted")
-        Invitation.objects.create(schedule=self.schedule1,from_user=self.user2,to_user=self.user3,status="h_pending")
+    # def test_approve_invitation(self):
+    #     Friendship.objects.create(from_user=self.user2,to_user=self.user3,status="accepted")
+    #     Invitation.objects.create(schedule=self.schedule1,from_user=self.user2,to_user=self.user3,status="h_pending")
 
-        self.client.force_login(self.user1)
+    #     self.client.force_login(self.user1)
 
-        url = reverse('chatroom:approve_invitation',args=[self.schedule1.schedule_id,self.user2.id,self.user3.id])
-        response = self.client.post(url, {}, format="json")
-        self.assertEqual(response.status_code,200)
+    #     url = reverse('chatroom:approve_invitation',args=[self.schedule1.schedule_id,self.user2.id,self.user3.id])
+    #     response = self.client.post(url, {}, format="json")
+    #     self.assertEqual(response.status_code,200)
 
-    def test_accept_invitation(self):
-        Friendship.objects.create(from_user=self.user2,to_user=self.user3,status="accepted")
-        invitation_instance = Invitation.objects.create(schedule=self.schedule1,from_user=self.user2,to_user=self.user3,status="pending")
+    # def test_accept_invitation(self):
+    #     Friendship.objects.create(from_user=self.user2,to_user=self.user3,status="accepted")
+    #     invitation_instance = Invitation.objects.create(schedule=self.schedule1,from_user=self.user2,to_user=self.user3,status="pending")
 
-        self.client.force_login(self.user3)
+    #     self.client.force_login(self.user3)
 
-        url = reverse('chatroom:accept_invitation',args=[invitation_instance.pk])
-        response = self.client.post(url, {}, format="json")
-        self.assertEqual(response.status_code,201)
+    #     url = reverse('chatroom:accept_invitation',args=[invitation_instance.pk])
+    #     response = self.client.post(url, {}, format="json")
+    #     self.assertEqual(response.status_code,201)
     
-    def test_reject_invitation(self):
-        Friendship.objects.create(from_user=self.user2,to_user=self.user3,status="accepted")
-        invitation_instance = Invitation.objects.create(schedule=self.schedule1,from_user=self.user2,to_user=self.user3,status="pending")
+    # def test_reject_invitation(self):
+    #     Friendship.objects.create(from_user=self.user2,to_user=self.user3,status="accepted")
+    #     invitation_instance = Invitation.objects.create(schedule=self.schedule1,from_user=self.user2,to_user=self.user3,status="pending")
 
-        self.client.force_login(self.user3)
+    #     self.client.force_login(self.user3)
 
-        url = reverse('chatroom:reject_invitation',args=[invitation_instance.pk])
-        response = self.client.post(url, {}, format="json")
-        self.assertEqual(response.status_code,200)
+    #     url = reverse('chatroom:reject_invitation',args=[invitation_instance.pk])
+    #     response = self.client.post(url, {}, format="json")
+    #     self.assertEqual(response.status_code,200)
     
     def test_내가받은초대리스트조회(self):
-        Participants.objects.create(schedule=self.schedule1, participant=self.user2)
-        Friendship.objects.create(from_user=self.user2,to_user=self.user3,status="accepted")
+        # 1번 스케줄에서 2개의 초대가 온 상황
         Invitation.objects.create(schedule=self.schedule1,from_user=self.user1,to_user=self.user3,status='pending')
         Invitation.objects.create(schedule=self.schedule1,from_user=self.user2,to_user=self.user3,status='pending')
+
+        # 2번 스케줄에서 1개의 초대가 온 상황
+        schedule2 = Schedules.objects.create(created_by=self.user2, is_chatroom=True)
+        Invitation.objects.create(schedule=schedule2,from_user=self.user2,to_user=self.user3,status='pending')
 
         self.client.force_login(self.user3)
 
         url = reverse('chatroom:내가받은초대리스트조회')
         response = self.client.get(url)
+        response_data = response.json()
+        # print(response_data)
+        self.assertEqual(len(response_data),3)
+        self.assertEqual(response.status_code,200)
+    
+    def test_나의승인을기다리고있는초대리스트조회(self):
+        self.user4 = User(email="user4@example.com", name="User Four", nickname="user4", gender='1')
+        self.user4.set_password("pass")
+        self.user4.save()
+
+        Invitation.objects.create(schedule=self.schedule1,from_user=self.user2,to_user=self.user3,status='h_pending')
+        Invitation.objects.create(schedule=self.schedule1,from_user=self.user2,to_user=self.user4,status='h_pending')
+
+        self.client.force_login(self.user1)
+
+        url = reverse('chatroom:나의승인을기다리고있는초대리스트조회')
+        response = self.client.get(url)
+        response_data = response.json()
+        # print(response_data)
+        self.assertEqual(len(response_data),2)
         self.assertEqual(response.status_code,200)

@@ -247,5 +247,5 @@ class ChatRoomInvitationService:
 
     @staticmethod
     def 나의승인을기다리고있는초대리스트조회(user):
-        schedule_queryset = Schedules.objects.filter(created_by=user)
-        return Invitation.objects.filter(status='h_pending',schedule__in=schedule_queryset)
+        schedule_list = Participants.objects.filter(is_host=True,participant=user).values_list('schedule')
+        return Invitation.objects.filter(status='h_pending',schedule__schedule_id__in=schedule_list)

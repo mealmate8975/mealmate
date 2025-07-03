@@ -164,3 +164,13 @@ class 내가받은초대리스트조회View(APIView):
         내가받은초대리스트 = ChatRoomInvitationService.내가받은초대리스트조회(request.user)
         serializer = InvitationSerializer(내가받은초대리스트, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class 나의승인을기다리고있는초대리스트조회View(APIView):
+    """
+    나의승인을기다리고있는초대리스트조회 로직의 APIView
+    """
+    permission_classes = [IsAuthenticated]
+    def get(self,request):
+        나의승인을기다리고있는초대리스트 = ChatRoomInvitationService.나의승인을기다리고있는초대리스트조회(request.user)
+        serializer = InvitationSerializer(나의승인을기다리고있는초대리스트, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
