@@ -217,7 +217,7 @@ class ChatRoomInvitationService:
         invitation_instance.status = 'pending'
         invitation_instance.save()
         return True, "Invitation approved successfully."
-
+    @staticmethod
     def accept_invitation(invitation_id,user):
         """
         초대 받은 친구가 초대를 수락합니다.
@@ -231,7 +231,7 @@ class ChatRoomInvitationService:
             schedule_instance = invitation.schedule
             Participants.objects.create(schedule=schedule_instance,participant=user)
             return True, "Invitation accepted successfully."
-
+    @staticmethod
     def reject_invitation(invitation_id):
         """
         초대 받은 친구가 초대를 거절합니다.
