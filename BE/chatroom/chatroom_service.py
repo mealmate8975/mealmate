@@ -242,10 +242,10 @@ class ChatRoomInvitationService:
         return True, "Invitation rejected successfully."
         
     @staticmethod
-    def 내가받은초대리스트조회(user):
+    def get_received_invitations(user):
         return Invitation.objects.filter(to_user=user,status='pending')
 
     @staticmethod
-    def 나의승인을기다리고있는초대리스트조회(user):
+    def get_invitations_awaiting_my_approval(user):
         schedule_list = Participants.objects.filter(is_host=True,participant=user).values_list('schedule')
         return Invitation.objects.filter(status='h_pending',schedule__schedule_id__in=schedule_list)

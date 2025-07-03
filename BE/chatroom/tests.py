@@ -212,7 +212,7 @@ class ChatRoomInvitationTest(ChatRoomInvitationTestBase):
     #     response = self.client.post(url, {}, format="json")
     #     self.assertEqual(response.status_code,200)
     
-    def test_내가받은초대리스트조회(self):
+    def test_get_received_invitations(self):
         # 1번 스케줄에서 2개의 초대가 온 상황
         Invitation.objects.create(schedule=self.schedule1,from_user=self.user1,to_user=self.user3,status='pending')
         Invitation.objects.create(schedule=self.schedule1,from_user=self.user2,to_user=self.user3,status='pending')
@@ -223,14 +223,14 @@ class ChatRoomInvitationTest(ChatRoomInvitationTestBase):
 
         self.client.force_login(self.user3)
 
-        url = reverse('chatroom:내가받은초대리스트조회')
+        url = reverse('chatroom:get_received_invitations')
         response = self.client.get(url)
         response_data = response.json()
         # print(response_data)
         self.assertEqual(len(response_data),3)
         self.assertEqual(response.status_code,200)
     
-    def test_나의승인을기다리고있는초대리스트조회(self):
+    def test_get_invitations_awaiting_my_approval(self):
         self.user4 = User(email="user4@example.com", name="User Four", nickname="user4", gender='1')
         self.user4.set_password("pass")
         self.user4.save()
@@ -240,7 +240,7 @@ class ChatRoomInvitationTest(ChatRoomInvitationTestBase):
 
         self.client.force_login(self.user1)
 
-        url = reverse('chatroom:나의승인을기다리고있는초대리스트조회')
+        url = reverse('chatroom:get_invitations_awaiting_my_approval')
         response = self.client.get(url)
         response_data = response.json()
         # print(response_data)

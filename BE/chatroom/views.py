@@ -155,22 +155,22 @@ class RejectInvitationView(APIView):
             return Response({"detail": message}, status=400)
         return Response(status=200)
 
-class 내가받은초대리스트조회View(APIView):
+class GetReceivedInvitationsView(APIView):
     """
     내가받은초대리스트조회 로직의 APIView
     """
     permission_classes = [IsAuthenticated]
     def get(self,request):
-        내가받은초대리스트 = ChatRoomInvitationService.내가받은초대리스트조회(request.user)
-        serializer = InvitationSerializer(내가받은초대리스트, many=True)
+        invitation_list = ChatRoomInvitationService.get_received_invitations(request.user)
+        serializer = InvitationSerializer(invitation_list, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-class 나의승인을기다리고있는초대리스트조회View(APIView):
+class GetInvitationsAwaitinMyApprovalView(APIView):
     """
     나의승인을기다리고있는초대리스트조회 로직의 APIView
     """
     permission_classes = [IsAuthenticated]
     def get(self,request):
-        나의승인을기다리고있는초대리스트 = ChatRoomInvitationService.나의승인을기다리고있는초대리스트조회(request.user)
-        serializer = InvitationSerializer(나의승인을기다리고있는초대리스트, many=True)
+        invitation_list = ChatRoomInvitationService.get_invitations_awaiting_my_approval(request.user)
+        serializer = InvitationSerializer(invitation_list, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
