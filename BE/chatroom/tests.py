@@ -211,3 +211,15 @@ class ChatRoomInvitationTest(ChatRoomInvitationTestBase):
         url = reverse('chatroom:reject_invitation',args=[invitation_instance.pk])
         response = self.client.post(url, {}, format="json")
         self.assertEqual(response.status_code,200)
+    
+    def test_내가받은초대리스트조회(self):
+        Participants.objects.create(schedule=self.schedule1, participant=self.user2)
+        Friendship.objects.create(from_user=self.user2,to_user=self.user3,status="accepted")
+        Invitation.objects.create(schedule=self.schedule1,from_user=self.user1,to_user=self.user3,status='pending')
+        Invitation.objects.create(schedule=self.schedule1,from_user=self.user2,to_user=self.user3,status='pending')
+
+        self.client.force_login(self.user3)
+
+        url = reverse('chatroom:내가받은초대리스트조회')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)

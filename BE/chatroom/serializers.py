@@ -17,7 +17,7 @@ class InvitationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Invitation
         fields = [
-            'id', 'chatroom', 'from_user', 'to_user',
+            'id', 'schedule', 'from_user', 'to_user',
             'status', 'invited_at', 'updated_at', 'is_active'
         ]
         read_only_fields = ['id', 'invited_at', 'updated_at']

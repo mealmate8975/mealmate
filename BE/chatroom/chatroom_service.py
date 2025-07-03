@@ -241,3 +241,11 @@ class ChatRoomInvitationService:
         invitation.save()
         return True, "Invitation rejected successfully."
         
+    @staticmethod
+    def 내가받은초대리스트조회(user):
+        return Invitation.objects.filter(to_user=user,status='pending')
+
+    @staticmethod
+    def 나의승인을기다리고있는초대리스트조회(user):
+        schedule_queryset = Schedules.objects.filter(created_by=user)
+        return Invitation.objects.filter(status='h_pending',schedule__in=schedule_queryset)

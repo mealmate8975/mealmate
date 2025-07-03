@@ -16,6 +16,7 @@ from rest_framework.views import APIView
 from .chatroom_service import ChatRoomService, ChatRoomQueryService, ChatRoomInvitationService
 from schedules.models import Schedules
 from schedules.serializers import ScheduleSerializer
+from .serializers import InvitationSerializer
 
 # 채팅방 참여자 확인
 class CheckParticipantView(APIView):
@@ -153,3 +154,13 @@ class RejectInvitationView(APIView):
         if not success:
             return Response({"detail": message}, status=400)
         return Response(status=200)
+
+class 내가받은초대리스트조회View(APIView):
+    """
+    내가받은초대리스트조회 로직의 APIView
+    """
+    permission_classes = [IsAuthenticated]
+    def get(self,request):
+        내가받은초대리스트 = ChatRoomInvitationService.내가받은초대리스트조회(request.user)
+        serializer = InvitationSerializer(내가받은초대리스트, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
