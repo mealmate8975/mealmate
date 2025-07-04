@@ -10,13 +10,15 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from channels.db import database_sync_to_async
+from django.utils import timezone
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        from .models import ChatRoom, ChatParticipant  # 지연 import
+        from schedules.models import Schedules  # 지연 import
+        from participants.models import Participants  # 지연 import
         from django.utils.functional import LazyObject
 
-        self.room_id = self.scope['url_route']['kwargs']['room_id']
+        self.schedule_id = self.scope['url_route']['kwargs']['schedule_id']
         user = self.scope['user']
 
         # LazyObject 풀어주기
@@ -24,7 +26,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             user = user._wrapped
 
         try:
-            self.chatroom = await self.get_chatroom(self.room_id)
+            self.chatroom = await self.get_chatroom(self.schedule_id)
         except ObjectDoesNotExist:
             await self.close()
             return
@@ -34,7 +36,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.close()
             return
 
-        self.room_group_name = f'chat_{self.room_id}'
+        self.room_group_name = f'chat_{self.schedule_id}'
 
         await self.channel_layer.group_add(
             self.room_group_name,
@@ -55,7 +57,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         message = data['message']
         sender = data.get('sender', 'anonymous')
 
-        self.save_message_to_mongo(self.room_id, sender, message)
+        self.save_message_to_mongo(self.schedule_id, sender, message)
 
         await self.channel_layer.group_send(
             self.room_group_name,
@@ -73,29 +75,31 @@ class ChatConsumer(AsyncWebsocketConsumer):
         }))
 
     @database_sync_to_async
-    def get_chatroom(self, room_id):
-        from .models import ChatRoom
-        return ChatRoom.objects.get(id=room_id)
+    def get_chatroom(self, schedule_id):
+        from schedules.models import Schedules
+        return Schedules.objects.get(id=schedule_id)
 
     @database_sync_to_async
-    def is_user_participant(self, user, chatroom):
-        from .models import ChatParticipant
-        return ChatParticipant.objects.filter(chatroom=chatroom, user=user).exists()
+    def is_user_participant(self, user, schedule):
+        from participants.models import Participants
+        return Participants.objects.filter(schedule=schedule, user=user).exists()
 
-    def save_message_to_mongo(self, room_id, sender, message):
+    def save_message_to_mongo(self, schedule_id, sender, message):
         collection = settings.MESSAGES_COLLECTION
         collection.insert_one({
-            'room_id': room_id,
+            'schedule_id': schedule_id,
             'sender': sender,
             'message': message,
+            'timestamp' : timezone.now(),
         })
 
     async def send_chat_history(self):
         collection = settings.MESSAGES_COLLECTION
-        messages = collection.find({'room_id': self.room_id}).sort('_id', -1).limit(50)
+        messages = collection.find({'schedule_id': self.schedule_id}).sort('_id', -1).limit(50)
 
         for msg in reversed(list(messages)):
             await self.send(text_data=json.dumps({
                 'sender': msg['sender'],
                 'message': msg['message'],
+                'timestamp': msg.get('timestamp')
             }))
