@@ -26,12 +26,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
             user = user._wrapped
 
         try:
-            self.chatroom = await self.get_chatroom(self.schedule_id)
-        except ObjectDoesNotExist:
+            self.schedule = await self.get_schedule(self.schedule_id)
+        except Schedules.DoesNotExist:
             await self.close()
             return
 
-        is_participant = await self.is_user_participant(user, self.chatroom)
+        is_participant = await self.is_user_participant(user, self.schedule)
         if not is_participant:
             await self.close()
             return
@@ -47,9 +47,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.send_chat_history()
 
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(
-            self.room_group_name,
-            self.channel_name
+        if hasattr(self, 'room_group_name'):
+            await self.channel_layer.group_discard(
+                self.room_group_name,
+                self.channel_name
         )
 
     async def receive(self, text_data):
@@ -75,14 +76,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
         }))
 
     @database_sync_to_async
-    def get_chatroom(self, schedule_id):
+    def get_schedule(self, schedule_id):
         from schedules.models import Schedules
-        return Schedules.objects.get(id=schedule_id)
+        return Schedules.objects.get(schedule_id=schedule_id)
 
     @database_sync_to_async
     def is_user_participant(self, user, schedule):
         from participants.models import Participants
-        return Participants.objects.filter(schedule=schedule, user=user).exists()
+        return Participants.objects.filter(schedule=schedule, participant=user).exists()
 
     def save_message_to_mongo(self, schedule_id, sender, message):
         collection = settings.MESSAGES_COLLECTION
@@ -95,7 +96,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def send_chat_history(self):
         collection = settings.MESSAGES_COLLECTION
-        messages = collection.find({'schedule_id': self.schedule_id}).sort('_id', -1).limit(50)
+        messages = collection.find({'schedule_id': self.schedule_id}).sort('timestamp', -1).limit(50)
 
         for msg in reversed(list(messages)):
             await self.send(text_data=json.dumps({
