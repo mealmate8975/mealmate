@@ -18,7 +18,7 @@
     </form>
 </div>
 
-<!-- ✅ axios CDN 추가 -->
+<!-- axios CDN 추가 -->
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
 <!-- 버튼 누르면 백엔드에 보내는 비동기처리입니다.(axios) -->
@@ -31,7 +31,7 @@
         const email = form.querySelector('input[name="email"]').value;
         const password = form.querySelector('input[name="password"]').value;
 
-        axios.post("{% url 'accounts:login' %}", {
+        axios.post("/api/accounts/token/", {
             email: email,
             password: password
         }, {
@@ -39,11 +39,19 @@
         })
         .then(response => {
             console.log('로그인 성공:', response.data);
-            alert(`환영합니다. ${response.data['nickname']}님!`);
+
+            // 토큰 저장 (임시 localStorage에 저장)
+            localStorage.setItem('access', response.data.access);
+            localStorage.setItem('refresh', response.data.refresh);
+
+            alert("로그인 성공");
+
+            // 리다이렉트 추가
+            window.location.href = "/chat-test/";
         })
         .catch(error => {
             console.error('로그인 실패:', error.response?.data || error);
-            alert(`로그인 실패: ${error}`)
+            alert("로그인 실패");
         });
     });
 </script>
@@ -123,3 +131,15 @@ text-align: center;
 text-decoration: underline;
 }
 </style>
+
+<script>
+    axios.interceptors.request.use(function (config) {
+        const token = localStorage.getItem('access');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    }, function (error) {
+        return Promise.reject(error);
+    });
+</script>

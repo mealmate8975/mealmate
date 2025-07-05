@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>WebSocket 채팅 테스트</title>
+</head>
+<body>
+    <h1>채팅방 테스트</h1>
+
+    <!-- 로그아웃 버튼 추가 -->
+    <div style="text-align: right; margin-bottom: 10px;">
+        <button onclick="logout()">로그아웃</button>
+    </div>
+
+    <div>
+        <label>채팅방 이름:</label>
+        <input id="roomNameInput" type="text" value="testroom">
+        <button onclick="connect()">입장</button>
+    </div>
+
+    <div id="chat" style="display:none;">
+        <h2>채팅</h2>
+        <div id="messages" style="border:1px solid #000; height:300px; overflow-y:scroll;"></div>
+        <input id="messageInput" type="text" placeholder="메시지">
+        <button onclick="sendMessage()">보내기</button>
+    </div>
+
+    <script>
+        let socket = null;
+        let currentUserNickname = null;  // 현재 로그인한 사용자 닉네임 저장
+
+        function connect() {
+            if (socket) {
+                socket.close();
+            }
+
+            const roomName = document.getElementById("roomNameInput").value;
+            const token = localStorage.getItem('access');
+            socket = new WebSocket("ws://" + window.location.host + `/ws/chat/${roomName}/?token=${token}`);
+
+            socket.onopen = function(e) {
+                console.log("WebSocket 연결됨");
+                document.getElementById("chat").style.display = "block";
+                document.getElementById("messages").innerHTML = "";
+            };
+
+            socket.onmessage = function(e) {
+                const data = JSON.parse(e.data);
+                const message = data['message'];
+                const sender = data['sender'];
+
+                const messagesDiv = document.getElementById("messages");
+                messagesDiv.innerHTML += "<p><strong>" + sender + ":</strong> " + message + "</p>";
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            };
+
+            socket.onclose = function(e) {
+                console.log("WebSocket 연결 종료");
+            };
+        }
+
+        function sendMessage() {
+            const messageInput = document.getElementById("messageInput");
+            const message = messageInput.value;
+
+            if (!currentUserNickname) {
+                alert("유저 정보를 불러오지 못했습니다.");
+                return;
+            }
+
+            socket.send(JSON.stringify({
+                'message': message,
+                'sender': currentUserNickname
+            }));
+
+            messageInput.value = '';
+        }
+
+        function logout() {
+            localStorage.removeItem('access');
+            localStorage.removeItem('refresh');
+            alert("로그아웃 되었습니다.");
+            window.location.href = "/api/accounts/login-page/";
+        }
+    </script>
+
+    <!--  여기에 axios CDN 추가 -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <!--  여기부터 Protected API 테스트 스크립트 -->
+    <script>
+        axios.interceptors.request.use(function (config) {
+            const token = localStorage.getItem('access');
+            if (token) {
+                config.headers.Authorization = `Bearer ${token}`;
+            }
+            return config;
+        }, function (error) {
+            return Promise.reject(error);
+        });
+
+        // 페이지 로딩될 때 자동으로 유저 정보 요청
+        window.onload = function() {
+            axios.get("/api/accounts/me/")
+            .then(response => {
+                const data = response.data;
+                currentUserNickname = data.nickname;  // 닉네임 저장
+
+                const userInfo = document.createElement('div');
+                userInfo.innerText = `안녕하세요 ${data.nickname}님 (이메일: ${data.email})`;
+                document.body.insertBefore(userInfo, document.body.firstChild);
+            })
+            .catch(error => {
+                console.error("유저 정보 조회 실패:", error.response?.data || error);
+                alert("로그인이 필요합니다.");
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,6 +1,8 @@
 from pathlib import Path
 from dotenv import load_dotenv # dotenv 라이브러리 임포트
 import os
+from pymongo import MongoClient
+from pymongo.server_api import ServerApi
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,6 +39,8 @@ INSTALLED_APPS = [
     'participants',
     'schedules',
     'chatroom',
+    'channels',
+    'rest_framework_simplejwt',
 ]
 
 MIDDLEWARE = [
@@ -128,3 +132,40 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOW_ALL_ORIGINS = True
+
+# MongoDB Atlas 세팅
+MONGO_DB_URI  = os.getenv("MONGO_DB_URI")
+MONGO_DB_NAME = os.getenv("MONGO_DB_NAME")
+
+# 실제 커넥션 생성
+MONGO_CLIENT = MongoClient(MONGO_DB_URI, server_api=ServerApi('1'))
+MONGO_DB     = MONGO_CLIENT[MONGO_DB_NAME]
+
+# 채팅용 컬렉션 이름 할당
+MESSAGES_COLLECTION = MONGO_DB["messages"]
+ATTACHMENTS_COLLECTION = MONGO_DB["attachments"]
+REACTIONS_COLLECTION = MONGO_DB["reactions"]
+
+# Channels 설정
+ASGI_APPLICATION = 'config.asgi.application'
+
+# Redis 없이 InMemoryChannelLayer 사용
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
+
+AUTHENTICATION_BACKENDS = [
+    'accounts.backends.EmailBackend',
+]
+
+REST_FRAMEWORK = {
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.JSONParser',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication', # SessionAuthentication을 테스트에서만 허용하도록 추가
+    ],
+}

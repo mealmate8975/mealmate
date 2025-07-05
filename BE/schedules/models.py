@@ -15,4 +15,6 @@ class Schedules(models.Model):
     # 약속 시간 취합을 위해 필요한 필드 수정 및 추가
     schedule_start = models.DateTimeField(null=True,blank=True)
     schedule_end = models.DateTimeField(null=True,blank=True)
-    is_meal = models.BooleanField(default=True)
+
+    is_meal = models.BooleanField(default=True) # 식사 약속 여부
+    is_chatroom = models.BooleanField(default=False) # 채팅방 여부

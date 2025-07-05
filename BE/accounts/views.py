@@ -7,18 +7,45 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import get_user_model
 from .models import CustomUser
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.views import View
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .serializers import MyTokenObtainPairSerializer
 
 User = get_user_model()
 
-class LoginView(APIView):
+
+class MyTokenObtainPairView(TokenObtainPairView):
+    serializer_class = MyTokenObtainPairSerializer
+
+class UserMeView(APIView):
+    permission_classes = [IsAuthenticated]  # JWT 토큰 필요
+
     def get(self, request):
-        # 로그인 페이지를 렌더링
+        user = request.user  # JWT 토큰에서 복원된 유저
+        return Response({
+            "email": user.email,
+            "nickname": user.nickname,
+            "name": user.name,
+        })
+
+class LoginPageView(View):
+    def get(self, request):
         return render(request, 'login.html')
+
+@method_decorator(csrf_exempt, name='dispatch')
+class LoginAPIView(APIView):
     def post(self, request):
+        print("request.data:", request.data)
+        # print("request.body:", request.body)
+        
         serializer = LoginSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             user = serializer.validated_data['user']
             return Response({"message": "로그인 성공", "nickname": user.nickname}, status=200)
+        print("serializer.errors:", serializer.errors)
         return Response(serializer.errors, status=400)
     
 class RegisterView(APIView):

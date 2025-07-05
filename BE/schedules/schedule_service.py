@@ -20,10 +20,16 @@ from django.db.models import Q
 class ScheduleCommandService:
     @staticmethod
     def create_schedule(data, user):
+        with_chatroom = data.get("with_chatroom", False)
+
         serializer = ScheduleSerializer(data=data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(created_by=user)
-        return serializer.data
+        schedule = serializer.save(created_by=user)
+
+        if with_chatroom:
+            Schedules.objects.create(schedule=schedule)
+
+        return ScheduleSerializer(schedule).data
     @staticmethod
     def update_schedule(pk, user, data):
         schedule = get_object_or_404(Schedules, pk=pk, created_by=user)

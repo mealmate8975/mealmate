@@ -10,6 +10,18 @@ User = get_user_model()
 
 class FriendRequestService:
     @staticmethod
+    def check_friendship(user,target_user_id):
+        """
+        친구 관계를 양방향으로 파악합니다.
+        """
+        user_to_target = Friendship.objects.filter(from_user=user,to_user__id=target_user_id,status='accepted').exists()
+        target_to_user = Friendship.objects.filter(from_user__id=target_user_id,to_user = user,status='accepted').exists()
+        if user_to_target or target_to_user:
+            return True, "친구 관계입니다."
+        else:
+            return False, "친구 관계가 아닙니다."
+
+    @staticmethod
     def _handle_forward_existing(forward_first):
         """
         이미 존재하는 정방향 친구 요청 처리:
