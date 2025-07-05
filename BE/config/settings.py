@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'chatroom',
     'channels',
     'rest_framework_simplejwt',
+    'map',
 ]
 
 MIDDLEWARE = [

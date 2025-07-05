@@ -15,4 +15,5 @@ urlpatterns = [
     path('chat-test/', lambda request: render(request, 'chat_test.html')),
     path('api/accounts/token/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/accounts/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'), # 토큰 재발급
+    path('map/', include('map.urls')),
 ]
