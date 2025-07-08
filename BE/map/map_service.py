@@ -1,6 +1,16 @@
-from django.shortcuts import render, get_object_or_404
-from schedules.models import Schedules
-import json
+'''
+SOLID 원칙을 적용한 Django REST Framework에서의 대표적인 코드 구성 방식
+
+map_service.py
+실제 비즈니스 로직을 수행하는 서비스 계층
+
+views.py
+클라이언트의 HTTP 요청을 받고, 인증과 응답 처리만 담당하는 컨트롤러 역할의 뷰 레이어
+'''
+
+class MapSerive:
+    def update_coords():
+        pass
 
 def map_view(request):
     schedule_id = request.GET.get("schedule_id")
@@ -11,8 +21,8 @@ def map_view(request):
     
     # 2. 스케줄 조회
     schedule = get_object_or_404(Schedules, schedule_id=schedule_id)
-    coord = schedule.schedule_condition or {} 
-    # schedule.schedule_condition이 None이면 coord는 {} 빈 딕셔너리를 할당받음
+    coord = schedule.schedule_condition or {}
+
     
     # 3. 좌표 추출 (예외 방지용 기본값 처리)
     try:
