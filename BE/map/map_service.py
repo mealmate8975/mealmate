@@ -20,10 +20,10 @@ class RealTimeLocationService:
                 instance.latitude = latitude
                 instance.longitude = longitude
                 instance.save()
-                return True, "Coords updated successfully."
+                return "Coords updated successfully."
             else:
                 RealTimeLocation.objects.create(user=user, latitude=latitude, longitude=longitude)
-                return True, "Coords created successfully."
+                return "Coords created successfully."
 
 
 # def map_view(request):
