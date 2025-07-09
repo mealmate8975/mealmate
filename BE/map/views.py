@@ -12,11 +12,11 @@ from .map_service import RealTimeLocationService
 class UpdateRealTimeLocationView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def patch(self,request,latitude,longitude):
+    def patch(self,request):
         # 위도/경도 타입 및 범위 검증
         try:
-            lat = float(latitude)
-            lng = float(longitude)
+            lat = float(request.data.get("latitude"))
+            lng = float(request.data.get("longitude"))
         except (ValueError, TypeError):
             return Response({"detail": "위도와 경도는 숫자여야 합니다."}, status=status.HTTP_400_BAD_REQUEST)
 
