@@ -1,6 +1,7 @@
 from rest_framework.test import APITestCase
 from django.urls import reverse
 from django.contrib.auth import get_user_model
+from .models import RealTimeLocation
 
 User = get_user_model()
 
@@ -56,5 +57,11 @@ class UpdateRealTimeLocationTest(APITestCase):
         self.assertIn("Coords created successfully.", response.data["message"])
         response = self.client.patch(url,{"latitude": 3,"longitude": 4}, format='json')
         self.assertEqual(response.status_code,200)
+
+        # 값이 잘 수정됐는지 체크
+        loc = RealTimeLocation.objects.get(user=self.user1)
+        self.assertEqual(loc.latitude, 3)
+        self.assertEqual(loc.longitude, 4)
+
         self.assertIn("Coords updated successfully.", response.data["message"])
     
