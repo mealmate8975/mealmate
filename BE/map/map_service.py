@@ -13,6 +13,7 @@ import json
 
 from .models import RealTimeLocation
 from schedules.models import Schedules
+from participants.models import Participants
 
 class RealTimeLocationService:
     @staticmethod
@@ -28,62 +29,44 @@ class RealTimeLocationService:
                 RealTimeLocation.objects.create(user=user, latitude=latitude, longitude=longitude)
                 return "Coords created successfully."
             
+    @staticmethod        
     def get_location_coords(schedule_id):
         # 약속 장소
         schedule = get_object_or_404(Schedules, schedule_id=schedule_id)
         coord = schedule.schedule_condition
-        try:
-            coords = {
-                "lat": coord["latitude"],
-                "lng": coord["longitude"]
-            }
-        except KeyError:
-            coords = {
-                "lat": 37.5665,
-                "lng": 126.9780
-            }
-        return json.dumps(coords)
+        if not coord or "latitude" not in coord or "longitude" not in coord:
+            return json.dumps({"lat": None, "lng": None})
+
+        return json.dumps({
+            "lat": coord["latitude"],
+            "lng": coord["longitude"]
+        })
     
+    @staticmethod
     def get_participant_coords(user_id):
-        # 특정 유저의 실시간 위치
+        # 약속 참가자의 실시간 위치
         real_time_location = get_object_or_404(RealTimeLocation,user__id=user_id)
-        try:
-            coords = {
-                "lat": real_time_location.latitude,
-                "lng": real_time_location.longitude
-            }
-        except KeyError:
-            coords = {
-                "lat": 37.5665,
-                "lng": 126.9780
-            }
-        return json.dumps(coords)
+        lat = real_time_location.latitude
+        lng = real_time_location.longitude
 
+        if lat is None or lng is None:
+            return None  # 혹은 return {"user_id": user_id, "lat": None, "lng": None}
+
+        return {
+        "user_id": user_id,
+        "lat": lat,
+        "lng": lng
+        }
+    
+    @staticmethod
+    def get_all_participants_coords(schedule_id):
+        # 약속 모든 참가자의 실시간 위치
+        user_id_list = Participants.objects.filter(schedule__id=schedule_id).values_list('participant')
         
+        coords_list = []
+        for user_id in user_id_list:
+            coord = RealTimeLocationService.get_participant_coords(user_id)
+            if coord:  # None은 건너뜀
+                coords_list.append(coord)
 
-# def map_view(request):
-#     schedule_id = request.GET.get("schedule_id")
-
-#     # 1. schedule_id 없을 경우 폼만 보여줌
-#     if not schedule_id:
-#         return render(request, 'map/map_form.html')
-    
-#     # 2. 스케줄 조회
-#     schedule = get_object_or_404(Schedules, schedule_id=schedule_id)
-#     coord = schedule.schedule_condition or {}
-
-    
-#     # 3. 좌표 추출 (예외 방지용 기본값 처리)
-#     try:
-#         coords = {
-#             "lat": coord["latitude"],
-#             "lng": coord["longitude"]
-#         }
-#     except KeyError:
-#         coords = {
-#             "lat": 37.5665,
-#             "lng": 126.9780
-#         }
-#     return render(request, 'map/map.html', {
-#     "coords": json.dumps(coords)
-#     })
+        return json.dumps(coords_list)

@@ -31,6 +31,8 @@ class UpdateRealTimeLocationView(APIView):
         
         if msg == "Coords updated successfully.":
             return Response({"message": msg},status=200)
+
+# class 
         
 
 # def map_view(request):
