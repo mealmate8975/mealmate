@@ -7,9 +7,12 @@ map_service.py
 views.py
 클라이언트의 HTTP 요청을 받고, 인증과 응답 처리만 담당하는 컨트롤러 역할의 뷰 레이어
 '''
-from .models import RealTimeLocation
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+import json
+
+from .models import RealTimeLocation
+from schedules.models import Schedules
 
 class RealTimeLocationService:
     @staticmethod
@@ -24,7 +27,39 @@ class RealTimeLocationService:
             else:
                 RealTimeLocation.objects.create(user=user, latitude=latitude, longitude=longitude)
                 return "Coords created successfully."
+            
+    def get_location_coords(schedule_id):
+        # 약속 장소
+        schedule = get_object_or_404(Schedules, schedule_id=schedule_id)
+        coord = schedule.schedule_condition
+        try:
+            coords = {
+                "lat": coord["latitude"],
+                "lng": coord["longitude"]
+            }
+        except KeyError:
+            coords = {
+                "lat": 37.5665,
+                "lng": 126.9780
+            }
+        return json.dumps(coords)
+    
+    def get_participant_coords(user_id):
+        # 특정 유저의 실시간 위치
+        real_time_location = get_object_or_404(RealTimeLocation,user__id=user_id)
+        try:
+            coords = {
+                "lat": real_time_location.latitude,
+                "lng": real_time_location.longitude
+            }
+        except KeyError:
+            coords = {
+                "lat": 37.5665,
+                "lng": 126.9780
+            }
+        return json.dumps(coords)
 
+        
 
 # def map_view(request):
 #     schedule_id = request.GET.get("schedule_id")

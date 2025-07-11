@@ -15,33 +15,33 @@ class UpdateRealTimeLocationTest(APITestCase):
     # 1.경계값 테스트 (일반적인 위치 데이터는 소수점 4~6자리까지만 쓴다는 것을 고려)
     def test_update_location_fails_with_invalid_latitude1(self):
         url = reverse('map:update_real_time_location')
-        response = self.client.patch(url,{"latitude": -90.000001,"longitude": 127.456}, format='json')
+        response = self.client.patch(url,{"latitude": -90.000001,"longitude": 126.9780}, format='json')
         self.assertEqual(response.status_code,400)
         self.assertIn("위도는 -90~90, 경도는 -180~180 사이여야 합니다.", response.data["detail"])
     def test_update_location_fails_with_invalid_latitude2(self):
         url = reverse('map:update_real_time_location')
-        response = self.client.patch(url,{"latitude": 90.000001,"longitude": 127.456}, format='json')
+        response = self.client.patch(url,{"latitude": 90.000001,"longitude": 126.9780}, format='json')
         self.assertEqual(response.status_code,400)
         self.assertIn("위도는 -90~90, 경도는 -180~180 사이여야 합니다.", response.data["detail"])
     def test_update_location_fails_with_invalid_longitude1(self):
         url = reverse('map:update_real_time_location')
-        response = self.client.patch(url,{"latitude": 38,"longitude": -180.000001}, format='json')
+        response = self.client.patch(url,{"latitude": 37.5665,"longitude": -180.000001}, format='json')
         self.assertEqual(response.status_code,400)
         self.assertIn("위도는 -90~90, 경도는 -180~180 사이여야 합니다.", response.data["detail"])
     def test_update_location_fails_with_invalid_longitude2(self):
         url = reverse('map:update_real_time_location')
-        response = self.client.patch(url,{"latitude": 38,"longitude": 180.000001}, format='json')
+        response = self.client.patch(url,{"latitude": 37.5665,"longitude": 180.000001}, format='json')
         self.assertEqual(response.status_code,400)
         self.assertIn("위도는 -90~90, 경도는 -180~180 사이여야 합니다.", response.data["detail"])
     # 2.유효하지 않은 위도/경도 값 테스트
     def test_update_location_fails_with_non_digit_latitude(self):
         url = reverse('map:update_real_time_location')
-        response = self.client.patch(url,{"latitude": "no_digit","longitude": 127.456}, format='json')
+        response = self.client.patch(url,{"latitude": "no_digit","longitude": 126.9780}, format='json')
         self.assertEqual(response.status_code,400)
         self.assertIn("위도와 경도는 숫자여야 합니다.", response.data["detail"])
     def test_update_location_fails_with_invalid_longitude(self):
         url = reverse('map:update_real_time_location')
-        response = self.client.patch(url,{"latitude": 38,"longitude": "no_digit"}, format='json')
+        response = self.client.patch(url,{"latitude": 37.5665,"longitude": "no_digit"}, format='json')
         self.assertEqual(response.status_code,400)
         self.assertIn("위도와 경도는 숫자여야 합니다.", response.data["detail"])
     def test_update_location_fails_with_invalid_value(self):
@@ -55,13 +55,13 @@ class UpdateRealTimeLocationTest(APITestCase):
         response = self.client.patch(url,{"latitude": 1,"longitude": 2}, format='json')
         self.assertEqual(response.status_code,201)
         self.assertIn("Coords created successfully.", response.data["message"])
-        response = self.client.patch(url,{"latitude": 3,"longitude": 4}, format='json')
+        response = self.client.patch(url,{"latitude": 37.5665,"longitude": 126.9780}, format='json')
         self.assertEqual(response.status_code,200)
 
         # 값이 잘 수정됐는지 체크
         loc = RealTimeLocation.objects.get(user=self.user1)
-        self.assertEqual(loc.latitude, 3)
-        self.assertEqual(loc.longitude, 4)
+        self.assertEqual(loc.latitude, 37.5665)
+        self.assertEqual(loc.longitude, 126.9780)
 
         self.assertIn("Coords updated successfully.", response.data["message"])
     
