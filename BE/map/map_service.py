@@ -45,7 +45,7 @@ class RealTimeLocationService:
     @staticmethod
     def get_participant_coords(user_id):
         # 약속 참가자의 실시간 위치
-        real_time_location = get_object_or_404(RealTimeLocation,user__id=user_id)
+        real_time_location = get_object_or_404(RealTimeLocation,user_id=user_id)
         lat = real_time_location.latitude
         lng = real_time_location.longitude
 
@@ -61,7 +61,7 @@ class RealTimeLocationService:
     @staticmethod
     def get_all_participants_coords(schedule_id):
         # 약속 모든 참가자의 실시간 위치
-        user_id_list = Participants.objects.filter(schedule__id=schedule_id).values_list('participant')
+        user_id_list = Participants.objects.filter(schedule_id=schedule_id).values_list('participant__id', flat=True)
         
         coords_list = []
         for user_id in user_id_list:
