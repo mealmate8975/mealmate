@@ -49,13 +49,10 @@ class RealTimeLocationService:
         lat = real_time_location.latitude
         lng = real_time_location.longitude
 
-        if lat is None or lng is None:
-            return None  # 혹은 return {"user_id": user_id, "lat": None, "lng": None}
-
         return {
-        "user_id": user_id,
-        "lat": lat,
-        "lng": lng
+            "user_id": user_id,
+            "lat": real_time_location.latitude,
+            "lng": real_time_location.longitude
         }
     
     @staticmethod
@@ -66,7 +63,6 @@ class RealTimeLocationService:
         coords_list = []
         for user_id in user_id_list:
             coord = RealTimeLocationService.get_participant_coords(user_id)
-            if coord:  # None은 건너뜀
-                coords_list.append(coord)
+            coords_list.append(coord)
 
         return json.dumps(coords_list)

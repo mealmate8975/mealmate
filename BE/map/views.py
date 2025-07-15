@@ -59,3 +59,11 @@ class SendUpdatedCoordinatesView(APIView):
         return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
         # Django의 StreamingHttpResponse를 사용하여 스트리밍 응답을 생성
         # content_type을 'text/event-stream'으로 설정해야 브라우저가 SSE로 인식함
+
+class GetScheduleLocationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, schedule_id):
+        coords_json = RealTimeLocationService.get_location_coords(schedule_id)
+        coords = json.loads(coords_json)
+        return Response(coords, status=200)
