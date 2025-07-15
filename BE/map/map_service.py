@@ -60,7 +60,7 @@ class RealTimeLocationService:
     
     @staticmethod
     def get_all_participants_coords(schedule_id):
-        # 약속 모든 참가자의 실시간 위치
+        # 약속의 모든 참가자의 실시간 위치
         user_id_list = Participants.objects.filter(schedule_id=schedule_id).values_list('participant__id', flat=True)
         
         coords_list = []
