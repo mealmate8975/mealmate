@@ -221,23 +221,100 @@ class TestSSECoordinateStream(APITestCase):
         self.assertIn("lng", decoded1)
         # 좌표 데이터(lat, lng)가 포함되어 있어야 함
 
-    class TestScheduleLocationAPI(APITestCase):
-        """
-        약속 장소(schedule_condition)에 저장된 위도·경도 좌표가
-        클라이언트가 요청했을 때 정확히 반환되는지 확인하는 테스트
-        """
-        def setUp(self):
-            self.user = User.objects.create_user(email="test@example.com", password="1234",nickname="user")
-            self.client.force_login(self.user)
+class TestScheduleLocationAPI(APITestCase):
+    """
+    약속 장소(schedule_condition)에 저장된 위도·경도 좌표가
+    클라이언트가 요청했을 때 정확히 반환되는지 확인하는 테스트
+    """
+    def setUp(self):
+        self.user = User.objects.create_user(email="test@example.com", password="1234",nickname="user")
 
-            self.schedule = Schedules.objects.create(
-                created_by=self.user,
-                schedule_condition={"latitude": 37.5665, "longitude": 126.9780}
-            )
-        def test_get_schedule_location_coords(self):
-            url = reverse("map:schedule_place_location", kwargs={"schedule_id": self.schedule.schedule_id})
-            response = self.client.get(url)
+    def test_place_location_404_if_unauthorized(self):
+        self.schedule = Schedules.objects.create(
+            created_by=self.user,
+            schedule_condition={"latitude": 37.5665, "longitude": 126.9780}
+        )
 
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.data["lat"], 37.5665)
-            self.assertEqual(response.data["lng"], 126.9780)
+        url = reverse("map:schedule_place_location", kwargs={"schedule_id": self.schedule.schedule_id})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 401)
+
+    def test_place_location_404_if_schedule_does_not_exist(self):
+        self.client.force_login(self.user)
+        url = reverse("map:schedule_place_location", kwargs={"schedule_id": 1})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 404)
+
+        
+    def test_get_schedule_location_coords(self):
+        self.client.force_login(self.user)
+        self.schedule = Schedules.objects.create(
+            created_by=self.user,
+            schedule_condition={"latitude": 37.5665, "longitude": 126.9780}
+        )
+
+        url = reverse("map:schedule_place_location", kwargs={"schedule_id": self.schedule.schedule_id})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("lat", response.data)
+        self.assertIsInstance(response.data["lat"], float)
+        self.assertIn("lng", response.data)
+        self.assertIsInstance(response.data["lng"], float)
+    
+    # 1. lat은 유효하지만 lng는 문자열인 경우
+    def test_schedule_location_with_valid_lat_and_invalid_lng(self):
+        self.client.force_login(self.user)
+        schedule = Schedules.objects.create(
+            created_by=self.user,
+            schedule_condition={"latitude": 37.5665, "longitude": "invalid"}
+        )
+        url = reverse("map:schedule_place_location", kwargs={"schedule_id": schedule.schedule_id})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("lng", response.data)
+    
+    #2. lat이 없고 lng만 있는 경우
+    def test_schedule_location_with_missing_latitude(self):
+        self.client.force_login(self.user)
+        schedule = Schedules.objects.create(
+            created_by=self.user,
+            schedule_condition={"longitude": 126.9780}
+        )
+        url = reverse("map:schedule_place_location", kwargs={"schedule_id": schedule.schedule_id})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("lat", response.data)
+    
+    # 3. lat과 lng 모두 누락된 경우
+    def test_schedule_location_with_no_coordinates(self):
+        self.client.force_login(self.user)
+        schedule = Schedules.objects.create(
+            created_by=self.user,
+            schedule_condition={}
+        )
+        url = reverse("map:schedule_place_location", kwargs={"schedule_id": schedule.schedule_id})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("lat", response.data)
+        self.assertIn("lng", response.data)
+    
+    # 4. lat=None, lng=None 인 경우
+    def test_schedule_location_with_null_coordinates(self):
+        self.client.force_login(self.user)
+        schedule = Schedules.objects.create(
+            created_by=self.user,
+            schedule_condition={"latitude": None, "longitude": None}
+        )
+        url = reverse("map:schedule_place_location", kwargs={"schedule_id": schedule.schedule_id})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("lat", response.data)
+        self.assertIn("lng", response.data)
+                         

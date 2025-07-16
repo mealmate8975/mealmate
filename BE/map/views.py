@@ -8,6 +8,7 @@ from map.sse_state import set_latest_coords
 from django.http import StreamingHttpResponse
 from map.sse_state import get_latest_coords
 import time
+from .serializers import ScheduleLocationSerializer
 
 from schedules.models import Schedules
 from participants.models import Participants
@@ -64,6 +65,12 @@ class GetScheduleLocationView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, schedule_id):
-        coords_json = RealTimeLocationService.get_location_coords(schedule_id)
-        coords = json.loads(coords_json)
-        return Response(coords, status=200)
+        # 1. 약속 장소 좌표 dict 받아오기
+        coords = RealTimeLocationService.get_location_coords(schedule_id)
+
+        # 2. 시리얼라이저로 감싸고 유효성 검사
+        serializer = ScheduleLocationSerializer(data=coords)
+        serializer.is_valid(raise_exception=True)
+
+        # 3. validated_data를 반환
+        return Response(serializer.data, status=200)

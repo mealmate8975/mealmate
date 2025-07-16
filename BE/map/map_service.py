@@ -35,12 +35,9 @@ class RealTimeLocationService:
         schedule = get_object_or_404(Schedules, schedule_id=schedule_id)
         coord = schedule.schedule_condition
         if not coord or "latitude" not in coord or "longitude" not in coord:
-            return json.dumps({"lat": None, "lng": None})
+            return {"lat": None, "lng": None}
 
-        return json.dumps({
-            "lat": coord["latitude"],
-            "lng": coord["longitude"]
-        })
+        return {"lat": coord["latitude"], "lng": coord["longitude"]}
     
     @staticmethod
     def get_participant_coords(user_id):
