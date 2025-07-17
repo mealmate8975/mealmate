@@ -82,6 +82,12 @@ class TestRealTimeLocationDBWrite(APITestCase):
 
         self.assertIn("Coords updated successfully.", response.data["message"])
 
+    def test_update_location_fails_with_none_latitude(self):
+        url = reverse('map:update_real_time_location', kwargs={'schedule_id': self.schedule.schedule_id})
+        response = self.client.patch(url, {"latitude": None, "longitude": 126.9780}, format='json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("위도와 경도는 숫자여야 합니다.", response.data["detail"])
+
 class TestRealTimeLocationCacheUpdate(APITestCase):
     """
     위치 전송 시 캐시(_latest_coords)가 갱신되는지 확인

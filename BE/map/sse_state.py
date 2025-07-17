@@ -16,3 +16,4 @@ def set_latest_coords(coords):
 def get_latest_coords():
     with _lock: # 읽을 때도 락을 걸어서 일관된 값을 보장
         return _latest_coords.copy() # 복사본을 반환 (원본이 변하지 않도록)
+    

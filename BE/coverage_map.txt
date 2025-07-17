@@ -1,0 +1,84 @@
+Name                                                                                Stmts   Miss  Cover   Missing
+-----------------------------------------------------------------------------------------------------------------
+accounts/__init__.py                                                                    0      0   100%
+accounts/admin.py                                                                       1      0   100%
+accounts/apps.py                                                                        4      0   100%
+accounts/backends.py                                                                   15     10    33%   8-20
+accounts/migrations/0001_initial.py                                                     5      0   100%
+accounts/migrations/0002_userblock.py                                                   6      0   100%
+accounts/migrations/__init__.py                                                         0      0   100%
+accounts/models.py                                                                     32      4    88%   8, 10, 38, 47
+accounts/serializers.py                                                                42     19    55%   14-24, 34-42, 53-56, 59-61
+accounts/urls.py                                                                        5      0   100%
+accounts/views.py                                                                      78     38    51%   27-28, 36, 41-49, 54, 56-68, 76-89, 96-108, 114, 120
+chatroom/__init__.py                                                                    0      0   100%
+chatroom/admin.py                                                                       1      0   100%
+chatroom/apps.py                                                                        4      0   100%
+chatroom/chatroom_service.py                                                          127     81    36%   32-34, 45-48, 55-58, 65-68, 75-85, 93-100, 111-135, 151-167, 175-187, 194-197, 204-219, 225-233, 239-242, 246, 250-251
+chatroom/migrations/0001_initial.py                                                     7      0   100%
+chatroom/migrations/0002_invitation.py                                                  6      0   100%
+chatroom/migrations/0003_alter_invitation_status_invitationblock.py                     6      0   100%
+chatroom/migrations/0004_add_schedule_fields_only.py                                    5      0   100%
+chatroom/migrations/0005_add_unique_together_constraints.py                             5      0   100%
+chatroom/migrations/__init__.py                                                         0      0   100%
+chatroom/models.py                                                                     27      2    93%   71, 81
+chatroom/serializers.py                                                                12      0   100%
+chatroom/urls.py                                                                        4      0   100%
+chatroom/views.py                                                                     105     61    42%   26-35, 43-46, 54-57, 64-67, 75-78, 85-93, 100-108, 117-124, 133-140, 149-156, 164-166, 174-176
+config/__init__.py                                                                      0      0   100%
+config/settings.py                                                                     36      0   100%
+config/urls.py                                                                          6      0   100%
+friendships/__init__.py                                                                 0      0   100%
+friendships/admin.py                                                                    1      0   100%
+friendships/apps.py                                                                     4      0   100%
+friendships/migrations/0001_initial.py                                                  7      0   100%
+friendships/migrations/0002_friendship_requested_at.py                                  5      0   100%
+friendships/migrations/__init__.py                                                      0      0   100%
+friendships/models.py                                                                  13      1    92%   36
+friendships/urls.py                                                                     3      0   100%
+friendships/views.py                                                                  155    105    32%   17-22, 32-41, 45-61, 65-74, 80-96, 102-105, 111-116, 122-128, 134-144, 150-160, 165-177, 182-194, 220-222, 228-235, 248-262
+manage.py                                                                              11      2    82%   12-13
+map/__init__.py                                                                         0      0   100%
+map/admin.py                                                                            1      0   100%
+map/apps.py                                                                             4      0   100%
+map/map_service.py                                                                     39      0   100%
+map/migrations/0001_initial.py                                                          7      0   100%
+map/migrations/__init__.py                                                              0      0   100%
+map/models.py                                                                           9      1    89%   11
+map/serializers.py                                                                      8      0   100%
+map/sse_state.py                                                                        9      0   100%
+map/tests.py                                                                          188      0   100%
+map/urls.py                                                                             4      0   100%
+map/views.py                                                                           50      2    96%   24, 59
+participants/__init__.py                                                                0      0   100%
+participants/admin.py                                                                   1      0   100%
+participants/apps.py                                                                    4      0   100%
+participants/migrations/0001_initial.py                                                 7      0   100%
+participants/migrations/0002_rename_meal_schedule_participants_schedule.py              4      0   100%
+participants/migrations/0003_rename_participants_participants_participant.py            4      0   100%
+participants/migrations/0004_alter_participants_participant.py                          6      0   100%
+participants/migrations/0005_alter_participants_unique_together.py                      5      0   100%
+participants/migrations/0006_participants_is_host_participants_joined_at.py             5      0   100%
+participants/migrations/__init__.py                                                     0      0   100%
+participants/models.py                                                                 10      0   100%
+restaurants/__init__.py                                                                 0      0   100%
+restaurants/admin.py                                                                    1      0   100%
+restaurants/apps.py                                                                     4      0   100%
+restaurants/migrations/0001_initial.py                                                  6      0   100%
+restaurants/migrations/__init__.py                                                      0      0   100%
+restaurants/models.py                                                                   9      0   100%
+schedules/__init__.py                                                                   0      0   100%
+schedules/admin.py                                                                      1      0   100%
+schedules/apps.py                                                                       4      0   100%
+schedules/migrations/0001_initial.py                                                    7      0   100%
+schedules/migrations/0002_rename_schedule_at_schedules_schedule_start_and_more.py       4      0   100%
+schedules/migrations/0003_schedules_with_chatroom.py                                    4      0   100%
+schedules/migrations/0004_rename_with_chatroom_schedules_is_chatroom.py                 4      0   100%
+schedules/migrations/__init__.py                                                        0      0   100%
+schedules/models.py                                                                    14      0   100%
+schedules/schedule_service.py                                                          73     44    40%   23-32, 35-39, 42-43, 49-50, 55-56, 62-70, 74-91, 96-104, 110-127
+schedules/serializers.py                                                               14      6    57%   21-29
+schedules/urls.py                                                                       4      0   100%
+schedules/views.py                                                                     59     36    39%   24-25, 28-32, 39-43, 46-50, 53-57, 63-80, 86-93
+-----------------------------------------------------------------------------------------------------------------
+TOTAL                                                                                1311    412    69%
