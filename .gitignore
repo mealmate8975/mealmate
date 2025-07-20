@@ -174,3 +174,7 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# 코드의 테스트 누락 영역 확인
+.coverage
+htmlcov/

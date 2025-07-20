@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>스케줄 선택</title>
+</head>
+<body>
+  <h2>스케줄 ID로 지도 보기</h2>
+  <form action="{% url 'map_view' %}" method="get">
+    <label for="schedule_id">Schedule ID:</label>
+    <input type="number" name="schedule_id" id="schedule_id" required>
+    <button type="submit">지도 보기</button>
+  </form>
+</body>
+</html>
