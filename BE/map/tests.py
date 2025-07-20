@@ -323,4 +323,13 @@ class TestScheduleLocationAPI(APITestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn("lat", response.data)
         self.assertIn("lng", response.data)
+
+'''
+개선하거나 향후 고려할 점
+
+1. 불필요한 좌표 갱신 방지
+2. sse가 자신 좌표 정보를 제외하고 전달
+3. 위치 수신 실패 대응
+
+'''
                          
