@@ -16,4 +16,6 @@ urlpatterns = [
     path('api/accounts/token/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/accounts/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'), # 토큰 재발급
     path('api/map/', include('map.urls',namespace="map")),
+    path('api/pages/', include('pages.urls',namespace="pages")),
+    path('api/posts/', include('posts.urls',namespace="posts")),
 ]

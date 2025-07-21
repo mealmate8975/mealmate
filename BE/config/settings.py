@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     'channels',
     'rest_framework_simplejwt',
     'map',
+    'posts',
+    'pages',
 ]
 
 MIDDLEWARE = [
