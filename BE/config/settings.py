@@ -172,3 +172,9 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication', # SessionAuthentication을 테스트에서만 허용하도록 추가
     ],
 }
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# LOGIN_URL = '/api/accounts/login/'
+LOGIN_URL = '/accounts/login/' # django 임시

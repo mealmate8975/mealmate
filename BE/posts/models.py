@@ -18,3 +18,20 @@ class Post(models.Model):
 
     def __str__(self):
         return f"{self.page.name} - {self.type}"
+    
+    def like_count(self):
+        '''
+        Post 모델에 좋아요 개수 쉽게 가져오는 헬퍼 메서드
+        '''
+        return self.likes.count()
+
+class Like(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='likes')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'post')  # 한 유저가 한 포스트에 중복 좋아요 못 하게 함
+
+    def __str__(self):
+        return f"{self.user.email} liked {self.post.id}"

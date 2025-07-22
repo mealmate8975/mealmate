@@ -1,0 +1,105 @@
+[
+    {
+      "model": "posts.post",
+      "fields": {
+        "author": 1,
+        "page": 1,
+        "content": "🎉 대전 0시 축제에 꼭 가보세요! 분위기 최고!",
+        "type": "promo",
+        "image": "posts/festival1.png",
+        "created_at": "2025-07-21T09:00:00Z"
+      }
+    },
+    {
+      "model": "posts.post",
+      "fields": {
+        "author": 1,
+        "page": 1,
+        "content": "🎆 야간 불꽃놀이가 정말 인상 깊었어요.",
+        "type": "review",
+        "image": "posts/fireworks.jpg",
+        "created_at": "2025-07-21T10:00:00Z"
+      }
+    },
+    {
+      "model": "posts.post",
+      "fields": {
+        "author": 1,
+        "page": 1,
+        "content": "TIP: 지하철 2번 출구에서 바로 연결돼요!",
+        "type": "tip",
+        "image": "posts/entrance_tip.png",
+        "created_at": "2025-07-21T11:00:00Z"
+      }
+    },
+    {
+      "model": "posts.post",
+      "fields": {
+        "author": 2,
+        "page": 2,
+        "content": "성심당 DCC점 케이크 진짜 맛있어요 🍰",
+        "type": "review",
+        "created_at": "2025-07-20T14:00:00Z"
+      }
+    },
+    {
+      "model": "posts.post",
+      "fields": {
+        "author": 2,
+        "page": 2,
+        "content": "TIP: 평일 아침 10시에 가면 줄 안 서요!",
+        "type": "tip",
+        "created_at": "2025-07-20T15:00:00Z"
+      }
+    },
+    {
+      "model": "posts.post",
+      "fields": {
+        "author": 3,
+        "page": 3,
+        "content": "💃 호두까기 인형 공연 너무 아름다웠어요.",
+        "type": "review",
+        "created_at": "2025-07-19T19:00:00Z"
+      }
+    },
+    {
+      "model": "posts.post",
+      "fields": {
+        "author": 3,
+        "page": 3,
+        "content": "TIP: 공연장 안이 추우니 겉옷 챙기세요!",
+        "type": "tip",
+        "created_at": "2025-07-19T19:30:00Z"
+      }
+    },
+    {
+      "model": "posts.post",
+      "fields": {
+        "author": 4,
+        "page": 4,
+        "content": "2025 꿈돌이 팝업전시 Yellow Dream 홍보합니다 💛",
+        "type": "promo",
+        "created_at": "2025-07-18T08:00:00Z"
+      }
+    },
+    {
+      "model": "posts.post",
+      "fields": {
+        "author": 4,
+        "page": 4,
+        "content": "전시 콘텐츠가 감성적이고 포토존도 많아요 📸",
+        "type": "review",
+        "created_at": "2025-07-18T10:00:00Z"
+      }
+    },
+    {
+      "model": "posts.post",
+      "fields": {
+        "author": 4,
+        "page": 4,
+        "content": "TIP: 전시 마지막에 주는 굿즈 놓치지 마세요!",
+        "type": "tip",
+        "created_at": "2025-07-18T10:30:00Z"
+      }
+    }
+  ]
