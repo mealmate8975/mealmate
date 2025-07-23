@@ -169,7 +169,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'rest_framework.authentication.SessionAuthentication', # SessionAuthentication을 테스트에서만 허용하도록 추가
+        'rest_framework.authentication.SessionAuthentication', # SessionAuthentication을 테스트에서만 허용하도록 추가 -> @login_required가 붙은 뷰가 admin 로그인 상태로도 작동
     ],
 }
 
@@ -178,3 +178,4 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # LOGIN_URL = '/api/accounts/login/'
 LOGIN_URL = '/accounts/login/' # django 임시
+LOGIN_REDIRECT_URL = '/api/posts/feed'  # 또는 로그인 후 이동시키고 싶은 URL
