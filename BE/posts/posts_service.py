@@ -11,6 +11,7 @@ from accounts.models import CustomUser
 from django.shortcuts import get_object_or_404
 
 from .models import Post,Like
+from pages.models import Page
 
 def toggle_like(user:CustomUser,post_id:int) ->bool:
     post = get_object_or_404(Post, id=post_id)
@@ -23,3 +24,12 @@ def toggle_like(user:CustomUser,post_id:int) ->bool:
         return False
 
     return True
+
+def create_post(author: CustomUser, page: Page, content: str, type_: str, image) -> Post:
+    return Post.objects.create(
+        author=author,
+        page=page,
+        content=content,
+        type=type_,
+        image=image,
+    )

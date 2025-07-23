@@ -2,8 +2,8 @@ from django.urls import path
 # from .views import (
 #     pagelist_view,
 #     page_view,
-#     page_new_post_view,
 # )
+from posts.views import create_post_view
 
 app_name = "pages"
 
