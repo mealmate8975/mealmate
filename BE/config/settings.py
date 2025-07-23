@@ -178,4 +178,4 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # LOGIN_URL = '/api/accounts/login/'
 LOGIN_URL = '/accounts/login/' # django 임시
-LOGIN_REDIRECT_URL = '/api/posts/feed'  # 또는 로그인 후 이동시키고 싶은 URL
+LOGIN_REDIRECT_URL = '/api/posts/pagelist'  # 또는 로그인 후 이동시키고 싶은 URL

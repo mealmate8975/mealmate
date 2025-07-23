@@ -10,7 +10,7 @@ class Post(models.Model):
     ]
 
     author = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    page = models.ForeignKey(Page, on_delete=models.CASCADE, related_name='posts')
+    page = models.ForeignKey(Page, on_delete=models.CASCADE, related_name='posts',blank=True,null=True)
     content = models.TextField()
     type = models.CharField(max_length=10, choices=TYPE_CHOICES)
     image = models.ImageField(upload_to='posts/', blank=True, null=True)
