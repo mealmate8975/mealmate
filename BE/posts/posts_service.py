@@ -33,3 +33,6 @@ def create_post(author: CustomUser, page: Page, content: str, type_: str, image)
         type=type_,
         image=image,
     )
+
+def delete_post(post):
+    return post.delete()

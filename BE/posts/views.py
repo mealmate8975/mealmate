@@ -11,14 +11,17 @@ from django.shortcuts import render,get_object_or_404
 from rest_framework.views import APIView
 # from rest_framework import generics
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_GET,require_POST,require_http_methods
 from django.shortcuts import redirect
+from django.http import HttpResponseForbidden
 
 # from .serializers import PostSerializer
 from .models import Post
 from pages.models import Page
 
-from .posts_service import toggle_like as toggle_like_service, create_post
+from .posts_service import toggle_like as toggle_like_service, create_post, delete_post
 
+@require_GET
 def feed_view(request):
     posts = Post.objects.all().order_by('-created_at')
     return render(request, 'posts/feed.html',{'posts':posts})
@@ -27,11 +30,13 @@ def feed_view(request):
 #     queryset = Post.objects.all().order_by('-created_at')
 #     serializer_class = PostSerializer
 
+@require_POST
 @login_required
 def toggle_like(request,post_id):
     toggle_like_service(request.user,post_id)
     return redirect(request.META.get('HTTP_REFERER','/')) # 요청을 보낸 페이지의 주소(이전 페이지 URL)를 가져오기 위해 사용되는 패턴
 
+@require_http_methods(["GET", "POST"])
 @login_required
 def create_post_view(request, page_id=None):
     page = None
@@ -48,3 +53,16 @@ def create_post_view(request, page_id=None):
         return redirect('pages:page_detail',page_id=page_id)
     
     return render(request, 'posts/post_form.html', {'page': page})
+
+# @require_POST
+@login_required
+def delete_post_view(request,post_id,page_id=None):
+    post = get_object_or_404(Post,id=post_id)
+
+    if post.author != request.user:
+        return HttpResponseForbidden("본인이 작성한 글만 삭제할 수 있습니다.")
+    
+    delete_post(post)
+    if page_id is None:
+        return redirect('posts:feed_view')
+    return redirect('pages:page_detail',page_id=page_id)
