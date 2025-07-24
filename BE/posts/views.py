@@ -43,6 +43,8 @@ def create_post_view(request, page_id=None):
         type_ = request.POST.get('type')
         image = request.FILES.get('image')
         create_post(request.user, page, content, type_, image)
-        return redirect('posts:feed_view')
+        if page == None:
+            return redirect('posts:feed_view')
+        return redirect('pages:page_detail',page_id=page_id)
     
     return render(request, 'posts/post_form.html', {'page': page})
