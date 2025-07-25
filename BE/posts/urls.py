@@ -3,7 +3,8 @@ from .views import (
     feed_view,
     toggle_like,
     create_post_view,
-    delete_post_view,    
+    update_post_view,
+    delete_post_view,
 )
 
 app_name = "posts"
@@ -14,4 +15,5 @@ urlpatterns = [
     path('like/<int:post_id>/', toggle_like, name='toggle_like'),
     path('new', create_post_view, name='create_post_view'),
     path('delete/<int:post_id>/',delete_post_view, name='delete_post_view'),
+    path('update/<int:post_id>/',update_post_view, name='update_post_view'),
 ]

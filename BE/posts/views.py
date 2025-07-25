@@ -22,7 +22,8 @@ from pages.models import Page
 from .posts_service import toggle_like as toggle_like_service
 from .posts_service import (
     create_post,
-    # update_post,
+    # R
+    update_post,
     delete_post,
     )
 
@@ -91,6 +92,22 @@ def update_post_view(request,post_id):
         return HttpResponseForbidden("본인이 작성한 글만 수정할 수 있습니다.")
     
     if request.method == 'POST':
-        pass
+        content = request.POST.get('content')
+        type_ = request.POST.get('type')
+        image = request.FILES.get('image')
+        delete_image = request.POST.get('delete_image')  
+
+        serializer = PostSerializer(data={
+            'content': content,
+            'type': type_,
+        })
+        serializer.is_valid(raise_exception=True) 
+
+        update_post(post,content,type_,image,delete_image)
+
+        page_id = post.page_id
+        if page_id is None:
+            return redirect('posts:feed_view')
+        return redirect('pages:page_detail',page_id=page_id)
     
     return render(request, 'posts/post_form.html',{'post':post} )
