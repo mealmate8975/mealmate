@@ -19,7 +19,12 @@ from .serializers import PostSerializer
 from .models import Post
 from pages.models import Page
 
-from .posts_service import toggle_like as toggle_like_service, create_post, delete_post
+from .posts_service import toggle_like as toggle_like_service
+from .posts_service import (
+    create_post,
+    update_post,
+    delete_post
+    )
 
 @require_GET
 def feed_view(request):
@@ -62,11 +67,12 @@ def create_post_view(request, page_id=None):
     
     return render(request, 'posts/post_form.html', {'page': page})
 
-# @require_POST
+# @require_POST # 삭제 버튼 구현 후 다시 활성화 할 것
 @login_required
 def delete_post_view(request,post_id,page_id=None):
     post = get_object_or_404(Post,id=post_id)
 
+    # 삭제 버튼을 본인의 포스트에서만 보이도록 프론트에서 구현할 것
     if post.author != request.user:
         return HttpResponseForbidden("본인이 작성한 글만 삭제할 수 있습니다.")
     
@@ -74,3 +80,14 @@ def delete_post_view(request,post_id,page_id=None):
     if page_id is None:
         return redirect('posts:feed_view')
     return redirect('pages:page_detail',page_id=page_id)
+
+# @require_POST # 수정 버튼 구현 후 다시 활성화 할 것
+@login_required
+def update_post_view(request,post_id):
+    post = get_object_or_404(Post,id=post_id)
+
+    # 수정 버튼을 본인의 포스트에서만 보이도록 프론트에서 구현할 것
+    if post.author != request.user:
+        return HttpResponseForbidden("본인이 작성한 글만 수정할 수 있습니다.")
+    
+    update_post()
