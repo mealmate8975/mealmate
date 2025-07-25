@@ -22,8 +22,8 @@ from pages.models import Page
 from .posts_service import toggle_like as toggle_like_service
 from .posts_service import (
     create_post,
-    update_post,
-    delete_post
+    # update_post,
+    delete_post,
     )
 
 @require_GET
@@ -90,4 +90,7 @@ def update_post_view(request,post_id):
     if post.author != request.user:
         return HttpResponseForbidden("본인이 작성한 글만 수정할 수 있습니다.")
     
-    update_post()
+    if request.method == 'POST':
+        pass
+    
+    return render(request, 'posts/post_form.html',{'post':post} )

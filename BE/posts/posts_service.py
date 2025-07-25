@@ -37,5 +37,5 @@ def create_post(author: CustomUser, page: Page, content: str, type_: str, image)
 def delete_post(post):
     return post.delete()
 
-def update_post(target,value):
-    pass
+# def update_post(post):
+#     pass
