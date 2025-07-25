@@ -15,7 +15,7 @@ from django.views.decorators.http import require_GET,require_POST,require_http_m
 from django.shortcuts import redirect
 from django.http import HttpResponseForbidden
 
-# from .serializers import PostSerializer
+from .serializers import PostSerializer
 from .models import Post
 from pages.models import Page
 
@@ -47,6 +47,14 @@ def create_post_view(request, page_id=None):
         content = request.POST.get('content')
         type_ = request.POST.get('type')
         image = request.FILES.get('image')
+
+        serializer = PostSerializer(data={
+            'content': content,
+            'type': type_,
+            'page': page.id if page else None
+        })
+        serializer.is_valid(raise_exception=True)
+
         create_post(request.user, page, content, type_, image)
         if page == None:
             return redirect('posts:feed_view')
