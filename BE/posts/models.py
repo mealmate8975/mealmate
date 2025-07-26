@@ -11,6 +11,7 @@ class Post(models.Model):
 
     author = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     page = models.ForeignKey(Page, on_delete=models.CASCADE, related_name='posts',blank=True,null=True)
+    title = models.CharField(max_length=100,blank=True, null=True)
     content = models.TextField()
     type = models.CharField(max_length=10, choices=TYPE_CHOICES,blank=True,null=True) # Django가 빈 문자열을 None으로 변환, DB에는 NULL이 저장됨
     image = models.ImageField(upload_to='posts/', blank=True, null=True)

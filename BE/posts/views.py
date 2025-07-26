@@ -21,7 +21,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import CreateAPIView, ListAPIView, UpdateAPIView, DestroyAPIView
 from rest_framework.exceptions import PermissionDenied
 
-
 from .serializers import PostSerializer
 from .models import Post
 from pages.models import Page
