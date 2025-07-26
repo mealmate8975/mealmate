@@ -10,10 +10,15 @@ views.py
 from django.shortcuts import render,get_object_or_404
 from rest_framework.views import APIView
 # from rest_framework import generics
-from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_GET,require_POST,require_http_methods
+# from django.contrib.auth.decorators import login_required
+# from django.views.decorators.http import require_GET,require_POST,require_http_methods
 from django.shortcuts import redirect
 from django.http import HttpResponseForbidden
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.generics import ListAPIView
 
 from .serializers import PostSerializer
 from .models import Post
@@ -27,10 +32,15 @@ from .posts_service import (
     delete_post,
     )
 
-@require_GET
-def feed_view(request):
-    posts = Post.objects.all().order_by('-created_at')
-    return render(request, 'posts/feed.html',{'posts':posts})
+# @require_GET
+# def feed_view(request):
+#     posts = Post.objects.all().order_by('-created_at')
+#     return render(request, 'posts/feed.html',{'posts':posts})
+
+class PostListAPIView(ListAPIView):
+    queryset = Post.objects.all().order_by('-created_at')
+    serializer_class = PostSerializer
+    permission_classes = [IsAuthenticated]
 
 # class PostListAPI(generics.ListAPIView):
 #     queryset = Post.objects.all().order_by('-created_at')
