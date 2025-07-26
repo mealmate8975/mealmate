@@ -18,5 +18,5 @@ class TestPostCreateAPIView(PostTestBase):
             "content":"테스트 포스트입니다",
             "type":"review",
         }
-        response = self.client.post(url,data,format="multipart")
+        response = self.client.post(url,data,format='json')
         self.assertEqual(response.status_code,201)
