@@ -24,10 +24,10 @@ class TestPostCreateAPIView(PostTestBase):
         response = self.client.post(url,data,format='json')
         self.assertEqual(response.status_code,201)
     def test_post_create_with_page_id(self):
-        self.page = Page.objects.create(
+        page = Page.objects.create(
             name = "테스트 페이지 1",
         )
-        url = reverse('posts:create_post_with_page',kwargs={'page_id' :self.page.id})
+        url = reverse('posts:create_post_with_page',kwargs={'page_id' :page.id})
         data = {
             "title" : "포스트 테스트 1",
             "content":"테스트 포스트입니다",
