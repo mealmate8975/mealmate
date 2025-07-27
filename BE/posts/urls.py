@@ -15,7 +15,7 @@ from .views import (
 app_name = "posts"
 
 urlpatterns = [    
-    path('create', PostCreateAPIView.as_view(), name='create_post'),
+    path('create/<int:page_id>/', PostCreateAPIView.as_view(), name='create_post'),
     path('list/', PostListAPIView.as_view(), name='post_list'),                       #전체 포스트 피드
     path('update/<int:pk>/',PostUpdateAPIView.as_view(), name='post_update'),
     path('delete/<int:pk>/',PostDeleteAPIView.as_view(), name='post_delete'),
