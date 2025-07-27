@@ -14,9 +14,10 @@ from .views import (
 
 app_name = "posts"
 
-urlpatterns = [    
-    path('create/<int:page_id>/', PostCreateAPIView.as_view(), name='create_post'),
-    path('list/', PostListAPIView.as_view(), name='post_list'),                       #전체 포스트 피드
+urlpatterns = [
+    path('create/', PostCreateAPIView.as_view(), name='create_post'),                           # page 없이 생성    
+    path('create/<int:page_id>/', PostCreateAPIView.as_view(), name='create_post_with_page'),     
+    path('list/', PostListAPIView.as_view(), name='post_list'),                                 #전체 포스트 피드
     path('update/<int:pk>/',PostUpdateAPIView.as_view(), name='post_update'),
     path('delete/<int:pk>/',PostDeleteAPIView.as_view(), name='post_delete'),
     path('like/<int:post_id>/', ToggleLikeAPIView.as_view(), name='toggle_like'),
