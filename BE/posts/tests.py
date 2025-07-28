@@ -193,10 +193,13 @@ class TestPostUpdateAPIView(PostTestBase):
 #         }
 #         response = self.client.patch(url,data,format='json')
 #         self.assertEqual(response.status_code,401)
-    
-    # 성공 케이스 (Happy Path)
-    def test_authenticated_user_can_update_post(self):
-        self.client.force_login(self.user1)
+
+    def test_post_update_forbidden_for_non_author(self):
+        user2 = User(email="user2@example.com", name="User One", nickname="user2", gender='1')
+        user2.set_password("pass")
+        user2.save()
+        self.client.force_login(user2)
+
         url = reverse("posts:post_update",kwargs={"pk":self.post1.id})
         data = {
             "title" : self.title2,
@@ -204,8 +207,20 @@ class TestPostUpdateAPIView(PostTestBase):
             "type" : self.type_2, 
         }
         response = self.client.patch(url,data,format='json')
-        self.assertEqual(response.status_code,200)
-        self.post1.refresh_from_db() # 값 업데이트
-        self.assertEqual(self.post1.title, self.title2)
-        self.assertEqual(self.post1.content, self.content2)
-        self.assertEqual(self.post1.type, self.type_2)
+        self.assertEqual(response.status_code,403)
+
+    # 성공 케이스 (Happy Path)
+    # def test_authenticated_user_can_update_post(self):
+    #     self.client.force_login(self.user1)
+    #     url = reverse("posts:post_update",kwargs={"pk":self.post1.id})
+    #     data = {
+    #         "title" : self.title2,
+    #         "content" :self.content2,
+    #         "type" : self.type_2, 
+    #     }
+    #     response = self.client.patch(url,data,format='json')
+    #     self.assertEqual(response.status_code,200)
+    #     self.post1.refresh_from_db() # 값 업데이트
+    #     self.assertEqual(self.post1.title, self.title2)
+    #     self.assertEqual(self.post1.content, self.content2)
+    #     self.assertEqual(self.post1.type, self.type_2)

@@ -52,7 +52,7 @@ class PostUpdateAPIView(UpdateAPIView):
         post = self.get_object()
 
         if post.author != self.request.user:
-            raise PermissionError("본인이 작성한 글만 수정할 수 있습니다.")
+            raise PermissionDenied("본인이 작성한 글만 수정할 수 있습니다.")
         
         delete_image = self.request.data.get('delete_image')
         if delete_image and post.image:
