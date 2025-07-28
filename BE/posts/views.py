@@ -55,11 +55,11 @@ class PostUpdateAPIView(UpdateAPIView):
             raise PermissionDenied("본인이 작성한 글만 수정할 수 있습니다.")
         
         delete_image = self.request.data.get('delete_image')
-        if delete_image and post.image:
+        if str(delete_image).lower() == "on" and post.image:
             post.image.delete(save=False)
             post.image = None
         
-        serializer.save()
+        serializer.save(image=post.image)
 
 class PostDeleteAPIView(DestroyAPIView):
     queryset = Post.objects.all()

@@ -3,6 +3,7 @@ from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 import os
+from django.conf import settings
 
 from posts.models import Post
 from pages.models import Page
@@ -185,7 +186,7 @@ class TestPostUpdateAPIView(PostTestBase):
         self.content2 = "포스트 수정 테스트입니다."
         self.type_2 = "tip"
 
-        image_path = os.path.join(os.path.dirname(__file__), '..', '..', 'media', 'fireworks.jpg')
+        image_path = os.path.join(settings.BASE_DIR, 'media','posts', 'fireworks.jpg')
         with open(image_path, 'rb') as img:
             self.uploaded_image = SimpleUploadedFile("fireworks.jpg", img.read(), content_type="image/jpeg")
 
@@ -241,7 +242,7 @@ class TestPostUpdateAPIView(PostTestBase):
         )
 
         self.client.force_login(self.user1)
-        url = reverse("posts:post_update",kwargs={"pk":self.post1.id})
+        url = reverse("posts:post_update",kwargs={"pk":post2.id})
         title = "수정된 제목2"
         content = "수정된 콘텐츠2"
         type_ = "promo"
@@ -249,7 +250,7 @@ class TestPostUpdateAPIView(PostTestBase):
             "title" : title,
             "content" : content,
             "type" : type_ ,
-            "delete_image" : True,
+            "delete_image" : "on", # 체크박스 체크됨
         }
         response = self.client.patch(url,data,format='json')
         self.assertEqual(response.status_code,200)
@@ -257,4 +258,4 @@ class TestPostUpdateAPIView(PostTestBase):
         self.assertEqual(post2.title,title)
         self.assertEqual(post2.content, content)
         self.assertEqual(post2.type, type_)
-        self.assertEqual(post2.image,None)
+        self.assertFalse(post2.image)
