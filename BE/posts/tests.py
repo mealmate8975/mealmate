@@ -124,6 +124,13 @@ class TestPostListAPIView(PostTestBase):
         url = reverse("posts:post_list")
         response = self.client.get(url)
         self.assertEqual(response.status_code,401)
+    
+    def test_post_list_returns_empty_list_when_no_posts_exist(self):
+        self.client.force_login(self.user1)
+        url = reverse("posts:post_list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
+        self.assertEqual(response.data, [])
 
     def test_post_list_returns_all_posts_for_authenticated_user(self):
         self.user2 = User(email="user2@example.com", name="User One", nickname="user2", gender='1')
