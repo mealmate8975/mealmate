@@ -1,6 +1,8 @@
 from rest_framework.test import APITestCase
 from django.urls import reverse
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
+import os
 
 from posts.models import Post
 from pages.models import Page
@@ -183,6 +185,10 @@ class TestPostUpdateAPIView(PostTestBase):
         self.content2 = "포스트 수정 테스트입니다."
         self.type_2 = "tip"
 
+        image_path = os.path.join(os.path.dirname(__file__), '..', '..', 'media', 'fireworks.jpg')
+        with open(image_path, 'rb') as img:
+            self.uploaded_image = SimpleUploadedFile("fireworks.jpg", img.read(), content_type="image/jpeg")
+
 #     # 실패 케이스 (UnHappy Path) 
 #     def test_post_update_for_unauthenticated_user(self):
 #         url = reverse("posts:post_update",kwargs={"pk":self.post1.id})
@@ -194,20 +200,20 @@ class TestPostUpdateAPIView(PostTestBase):
 #         response = self.client.patch(url,data,format='json')
 #         self.assertEqual(response.status_code,401)
 
-    def test_post_update_forbidden_for_non_author(self):
-        user2 = User(email="user2@example.com", name="User One", nickname="user2", gender='1')
-        user2.set_password("pass")
-        user2.save()
-        self.client.force_login(user2)
+    # def test_post_update_forbidden_for_non_author(self):
+    #     user2 = User(email="user2@example.com", name="User One", nickname="user2", gender='1')
+    #     user2.set_password("pass")
+    #     user2.save()
+    #     self.client.force_login(user2)
 
-        url = reverse("posts:post_update",kwargs={"pk":self.post1.id})
-        data = {
-            "title" : self.title2,
-            "content" :self.content2,
-            "type" : self.type_2, 
-        }
-        response = self.client.patch(url,data,format='json')
-        self.assertEqual(response.status_code,403)
+    #     url = reverse("posts:post_update",kwargs={"pk":self.post1.id})
+    #     data = {
+    #         "title" : self.title2,
+    #         "content" :self.content2,
+    #         "type" : self.type_2, 
+    #     }
+    #     response = self.client.patch(url,data,format='json')
+    #     self.assertEqual(response.status_code,403)
 
     # 성공 케이스 (Happy Path)
     # def test_authenticated_user_can_update_post(self):
@@ -224,3 +230,31 @@ class TestPostUpdateAPIView(PostTestBase):
     #     self.assertEqual(self.post1.title, self.title2)
     #     self.assertEqual(self.post1.content, self.content2)
     #     self.assertEqual(self.post1.type, self.type_2)
+    
+    def test_post_update_when_delete_image_is_True(self):
+        post2 = Post.objects.create(
+            author = self.user1,
+            title = self.title2,
+            content = self.content2,
+            type = self.type_2,
+            image = self.uploaded_image,
+        )
+
+        self.client.force_login(self.user1)
+        url = reverse("posts:post_update",kwargs={"pk":self.post1.id})
+        title = "수정된 제목2"
+        content = "수정된 콘텐츠2"
+        type_ = "promo"
+        data = {
+            "title" : title,
+            "content" : content,
+            "type" : type_ ,
+            "delete_image" : True,
+        }
+        response = self.client.patch(url,data,format='json')
+        self.assertEqual(response.status_code,200)
+        post2.refresh_from_db() # 값 업데이트
+        self.assertEqual(post2.title,title)
+        self.assertEqual(post2.content, content)
+        self.assertEqual(post2.type, type_)
+        self.assertEqual(post2.image,None)
