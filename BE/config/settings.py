@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'map',
     'posts',
     'pages',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
@@ -179,3 +180,5 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # LOGIN_URL = '/api/accounts/login/'
 LOGIN_URL = '/accounts/login/' # django 임시
 LOGIN_REDIRECT_URL = '/api/pages/pagelist'  # 또는 로그인 후 이동시키고 싶은 URL
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')

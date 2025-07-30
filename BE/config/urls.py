@@ -1,12 +1,24 @@
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.shortcuts import render
 from rest_framework_simplejwt.views import TokenRefreshView
 from accounts.views import MyTokenObtainPairView
 from django.conf import settings
 from django.conf.urls.static import static
 # from django.contrib.auth import views as auth_views
+from rest_framework import permissions
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
 
+schema_view = get_schema_view(
+   openapi.Info(
+      title="My API",
+      default_version='v1',
+      description="자동 생성된 API 문서",
+   ),
+   public=True,
+   permission_classes=(permissions.AllowAny,),
+)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -22,6 +34,9 @@ urlpatterns = [
     path('api/pages/', include('pages.urls',namespace="pages")),
     path('api/posts/', include('posts.urls',namespace="posts")),
     # path('accounts/login/', auth_views.LoginView.as_view(template_name='accounts/login.html'), name='login'),
+    re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),    # Swagger/OpenAPI JSON, YAML
+    re_path(r'^swagger/$', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),              # Swagger UI
+    re_path(r'^redoc/$', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),                       # Redoc UI
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
