@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'map',
     'posts',
     'pages',
+    'recommendation',
 ]
 
 MIDDLEWARE = [

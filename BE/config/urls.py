@@ -22,6 +22,7 @@ urlpatterns = [
     path('api/pages/', include('pages.urls',namespace="pages")),
     path('api/posts/', include('posts.urls',namespace="posts")),
     # path('accounts/login/', auth_views.LoginView.as_view(template_name='accounts/login.html'), name='login'),
+    path('recommendation/',include("recommendation.urls",namespace="recommendation")),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
