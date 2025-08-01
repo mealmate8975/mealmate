@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'schedules',
     'chatroom',
     'channels',
+    'recommendation',
     'rest_framework_simplejwt',
     'map',
     'posts',
