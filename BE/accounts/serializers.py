@@ -2,29 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import authenticate
 from .models import CustomUser
 import re
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from django.contrib.auth import authenticate
-
-class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-    username_field = 'email'
-
-    def validate(self, attrs):
-        # email과 password를 받아서 직접 매핑
-        email = attrs.get("email")
-        password = attrs.get("password")
-
-        user = authenticate(username=email, password=password)
-
-        if user is None:
-            raise AuthenticationFailed('이메일 또는 비밀번호가 올바르지 않습니다')
-
-        refresh = self.get_token(user)
-
-        return {
-            'refresh': str(refresh),
-            'access': str(refresh.access_token),
-        }
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -59,3 +37,26 @@ class RegisterSerializer(serializers.Serializer):
         if not re.match(r'010\d{8}$',data):
             raise serializers.ValidationError("전화번호 형식 오류")
         return data
+    
+# from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+# from rest_framework_simplejwt.exceptions import AuthenticationFailed
+    
+# class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+#     username_field = 'email'
+
+#     def validate(self, attrs):
+#         # email과 password를 받아서 직접 매핑
+#         email = attrs.get("email")
+#         password = attrs.get("password")
+
+#         user = authenticate(username=email, password=password)
+
+#         if user is None:
+#             raise AuthenticationFailed('이메일 또는 비밀번호가 올바르지 않습니다')
+
+#         refresh = self.get_token(user)
+
+#         return {
+#             'refresh': str(refresh),
+#             'access': str(refresh.access_token),
+#         }

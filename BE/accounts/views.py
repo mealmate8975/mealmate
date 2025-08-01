@@ -12,13 +12,9 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import MyTokenObtainPairSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
-
-
-class MyTokenObtainPairView(TokenObtainPairView):
-    serializer_class = MyTokenObtainPairSerializer
 
 class UserMeView(APIView):
     permission_classes = [IsAuthenticated]  # JWT 토큰 필요
@@ -31,40 +27,24 @@ class UserMeView(APIView):
             "name": user.name,
         })
 
-class LoginPageView(View):
-    def get(self, request):
-        return render(request, 'login.html')
-
-@method_decorator(csrf_exempt, name='dispatch')
+# @method_decorator(csrf_exempt, name='dispatch')
 class LoginAPIView(APIView):
     def post(self, request):
-        print("request.data:", request.data)
+        # print("request.data:", request.data)
         # print("request.body:", request.body)
         
         serializer = LoginSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             user = serializer.validated_data['user']
-            return Response({"message": "로그인 성공", "nickname": user.nickname}, status=200)
-        print("serializer.errors:", serializer.errors)
-        return Response(serializer.errors, status=400)
-    
-class RegisterView(APIView):
-    def get(self, request):
-        # 회원가입 페이지를 렌더링
-        return render(request, 'register.html')
-    def post(self, request):
-        serializer = RegisterSerializer(data=request.data)
-        if serializer.is_valid():
-            user = CustomUser.objects.create_user(
-                email = serializer.validated_data['email'],
-                name = serializer.validated_data['name'],
-                password = serializer.validated_data['password'],
-                phone = serializer.validated_data['phone'],
-                nickname = serializer.validated_data['nickname']
-            )
+            refresh = RefreshToken.for_user(user)
             return Response({
-                "message": "회원가입 성공", 'USER_ID': user.email
-            }, status=201)
+                "access" : str(refresh.access_token),
+                "refresh" : str(refresh),
+                "nickname": user.nickname,
+                "user_id" : user.id,
+                "email" : user.email
+                }, status=200)
+        # print("serializer.errors:", serializer.errors)
         return Response(serializer.errors, status=400)
 
 class BlockUserService:
@@ -118,3 +98,31 @@ class UnblockUserView(APIView):
 
     def delete(self, request, user_id):
         return Response(*BlockUserService.unblock_user(request.user, user_id))
+    
+# from .serializers import MyTokenObtainPairSerializer
+
+# class RegisterView(APIView):
+#     def get(self, request):
+#         # 회원가입 페이지를 렌더링
+#         return render(request, 'register.html')
+#     def post(self, request):
+#         serializer = RegisterSerializer(data=request.data)
+#         if serializer.is_valid():
+#             user = CustomUser.objects.create_user(
+#                 email = serializer.validated_data['email'],
+#                 name = serializer.validated_data['name'],
+#                 password = serializer.validated_data['password'],
+#                 phone = serializer.validated_data['phone'],
+#                 nickname = serializer.validated_data['nickname']
+#             )
+#             return Response({
+#                 "message": "회원가입 성공", 'USER_ID': user.email
+#             }, status=201)
+#         return Response(serializer.errors, status=400)
+
+# class LoginPageView(View):
+#     def get(self, request):
+#         return render(request, 'login.html')
+
+# class MyTokenObtainPairView(TokenObtainPairView):
+#     serializer_class = MyTokenObtainPairSerializer
