@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
 from datetime import timedelta
@@ -86,12 +85,13 @@ class RecommendationTest(APITestCase):
             print(f"3개월간 만난 횟수: {best_friend['meet_count']}회")
             
             # 구체적인 검증
-            self.assertIsNotNone(best_friend)
-            self.assertGreater(best_friend['meet_count'], 0)
-            self.assertIn('participant__nickname', best_friend)
-            self.assertIn('meet_count', best_friend)
+            self.assertIsNotNone(best_friend) # 최근 3개월간 만난 친구가 최소 한명 이상인가?
+            self.assertGreater(best_friend['meet_count'], 0) # 만난 횟수가 0보다 큰가? (실제 기록의 존재를 보장함)
+            self.assertIn('participant__nickname', best_friend) # 닉네임이 있는가?
+            self.assertIn('meet_count', best_friend) # 만난 횟수가 존재하는가?
             
             # 모든 친구들의 만남 횟수가 0보다 큰지 확인
+            # 만난적 없는 친구가 있는지 확인함
             for friend in friend_count:
                 self.assertGreater(friend['meet_count'], 0)
                 
@@ -101,9 +101,4 @@ class RecommendationTest(APITestCase):
             
         else:
             print("3개월간 친구를 안만나셨네요..")
-            self.fail("만난 친구가 없어서 테스트를 진행할 수 없습니다.")
-=======
-from django.test import TestCase
-
-# Create your tests here.
->>>>>>> 740154d039bd1ec0cf34f5ea776bf555b914f9c9
+            self.fail("친구가 없으신가봐요.")
