@@ -16,16 +16,31 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
 
-class UserMeView(APIView):
-    permission_classes = [IsAuthenticated]  # JWT 토큰 필요
-
-    def get(self, request):
-        user = request.user  # JWT 토큰에서 복원된 유저
-        return Response({
-            "email": user.email,
-            "nickname": user.nickname,
-            "name": user.name,
-        })
+class RegisterView(APIView):
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            validated_data = serializer.validated_data
+            user = CustomUser.objects.create_user(
+                email=validated_data["email"],
+                password=validated_data["password"],
+                name=validated_data["name"],
+                phone=validated_data.get("phone", ""),
+                nickname=validated_data["nickname"],
+                gender=validated_data["gender"]
+            )
+            return Response({
+                "message": "회원가입 성공",
+                "user": {
+                    "id": user.id,
+                    "email": user.email,
+                    "nickname": user.nickname,
+                    "name": user.name,
+                    "gender": user.gender,
+                    "phone": user.phone
+                }
+            }, status=201)
+        return Response(serializer.errors, status=400)
 
 # @method_decorator(csrf_exempt, name='dispatch')
 class LoginAPIView(APIView):
@@ -38,14 +53,42 @@ class LoginAPIView(APIView):
             user = serializer.validated_data['user']
             refresh = RefreshToken.for_user(user)
             return Response({
-                "access" : str(refresh.access_token),
-                "refresh" : str(refresh),
-                "nickname": user.nickname,
-                "user_id" : user.id,
-                "email" : user.email
-                }, status=200)
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "user": {
+                    "id": user.id,
+                    "email": user.email,
+                    "nickname": user.nickname,
+                    "name": user.name,
+                    "gender": user.gender,
+                    "phone": user.phone
+                }
+            }, status=200)
         # print("serializer.errors:", serializer.errors)
-        return Response(serializer.errors, status=400)
+        error_message = serializer.errors.get('non_field_errors', ["로그인 실패"])[0]
+        return Response({
+            "error": {
+                "code": "invalid_credentials",
+                "message": error_message
+            }
+            }, status=400)
+        # return Response(serializer.errors, status=400)
+
+class UserMeView(APIView):
+    permission_classes = [IsAuthenticated]  # JWT 토큰 필요
+
+    def get(self, request):
+        user = request.user  # JWT 토큰에서 복원된 유저
+        return Response({
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "nickname": user.nickname,
+                "name": user.name,
+                "gender": user.gender,
+                "phone": user.phone
+            }
+        })
 
 class BlockUserService:
     @staticmethod
