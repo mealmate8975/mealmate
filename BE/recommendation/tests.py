@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
 from datetime import timedelta
@@ -101,3 +102,8 @@ class RecommendationTest(APITestCase):
         else:
             print("3개월간 친구를 안만나셨네요..")
             self.fail("만난 친구가 없어서 테스트를 진행할 수 없습니다.")
+=======
+from django.test import TestCase
+
+# Create your tests here.
+>>>>>>> 740154d039bd1ec0cf34f5ea776bf555b914f9c9
