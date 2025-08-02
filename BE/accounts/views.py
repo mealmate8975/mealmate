@@ -1,3 +1,5 @@
+# BE/accounts/views.py
+
 from .serializers import LoginSerializer, RegisterSerializer
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -15,7 +17,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 import re
 
-from .accounts_service import RegisterService
+from .accounts_service import AccountService
 
 User = get_user_model()
 
@@ -24,41 +26,37 @@ class RegisterAPIView(APIView):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             validated_data = serializer.validated_data
-            user = RegisterService.register(validated_data)
+            user = AccountService.register(validated_data)
             return Response({"message": "회원가입 성공",},status=201)
         return Response(serializer.errors,status=400)
 
-# # @method_decorator(csrf_exempt, name='dispatch')
-# class LoginAPIView(APIView):
-#     def post(self, request):
-#         # print("request.data:", request.data)
-#         # print("request.body:", request.body)
+class LoginAPIView(APIView):
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            user = serializer.validated_data['user']
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "user": {
+                    "id": user.id,
+                    "email": user.email,
+                    "nickname": user.nickname,
+                    "name": user.name,
+                    "gender": user.gender,
+                    "phone": user.phone
+                }
+            }, status=200)
         
-#         serializer = LoginSerializer(data=request.data, context={'request': request})
-#         if serializer.is_valid():
-#             user = serializer.validated_data['user']
-#             refresh = RefreshToken.for_user(user)
-#             return Response({
-#                 "access": str(refresh.access_token),
-#                 "refresh": str(refresh),
-#                 "user": {
-#                     "id": user.id,
-#                     "email": user.email,
-#                     "nickname": user.nickname,
-#                     "name": user.name,
-#                     "gender": user.gender,
-#                     "phone": user.phone
-#                 }
-#             }, status=200)
-#         # print("serializer.errors:", serializer.errors)
-#         error_message = serializer.errors.get('non_field_errors', ["로그인 실패"])[0]
-#         return Response({
-#             "error": {
-#                 "code": "invalid_credentials",
-#                 "message": error_message
-#             }
-#             }, status=400)
-#         # return Response(serializer.errors, status=400)
+        error_message = serializer.errors.get('non_field_errors', ["로그인 실패"])[0]
+        return Response({
+            "error": {
+                "code": "invalid_credentials",
+                "message": error_message
+            }
+            }, status=400)
+        # return Response(serializer.errors, status=400)
 
 # class UserMeView(APIView):
 #     permission_classes = [IsAuthenticated]  # JWT 토큰 필요

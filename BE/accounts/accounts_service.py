@@ -1,9 +1,10 @@
-# accounts_service.py
+# BE/accounts/accounts_service.py
+
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
-class RegisterService():
+class AccountService():
     def register(validated_data):
         return User.objects.create_user(
             email=validated_data["email"],
