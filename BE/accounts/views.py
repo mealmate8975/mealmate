@@ -13,6 +13,7 @@ from django.views import View
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
+import re
 
 User = get_user_model()
 
@@ -89,6 +90,41 @@ class UserMeView(APIView):
                 "phone": user.phone
             }
         })
+    
+    def patch(self,request):
+        data = request.data
+        user = request.user
+
+        nickname = data.get('nickname')
+        phone = data.get('phone')
+
+        if User.objects.exclude(id=user.id).filter(nickname=nickname).exists():
+            return Response({"error":"이미 사용 중인 닉네임입니다."},status=400)
+        
+        if not re.match(r'01[016789]\d{7,8}$',phone):
+            return Response({"error" : "전화번호 형식이 올바르지 않습니다."},status=400)
+        
+        if not nickname and not phone:
+            return Response({"error": "수정할 항목이 없습니다."}, status=400)
+        
+        if 'nickname' in data:
+            user.nickname = nickname
+
+        if 'phone' in data:
+            user.phone = phone
+        
+        user.save()
+
+        return Response({
+            "user" :{
+                "id" : user.id,
+                "email": user.email,
+                "nickname": user.nickname,
+                "name": user.name,
+                "gender": user.gender,
+                "phone": user.phone
+            }
+        }, status=200)
 
 class BlockUserService:
     @staticmethod
