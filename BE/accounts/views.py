@@ -1,23 +1,14 @@
 # BE/accounts/views.py
 
-from .serializers import LoginSerializer, RegisterSerializer
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.shortcuts import render
-from .models import UserBlock
-from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import get_user_model
-from .models import CustomUser
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
-from django.views import View
 from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
-import re
 
-from .accounts_service import AccountService
+from .serializers import LoginSerializer, RegisterSerializer
+from .accounts_service import AccountService,BlockUserService
 
 User = get_user_model()
 
@@ -56,110 +47,57 @@ class LoginAPIView(APIView):
                 "message": error_message
             }
             }, status=400)
-        # return Response(serializer.errors, status=400)
 
-# class UserMeView(APIView):
-#     permission_classes = [IsAuthenticated]  # JWT 토큰 필요
+class UserMeView(APIView):
+    """
+    개인정보 확인과 수정
+    """
+    permission_classes = [IsAuthenticated]
 
-#     def get(self, request):
-#         user = request.user  # JWT 토큰에서 복원된 유저
-#         return Response({
-#             "user": {
-#                 "id": user.id,
-#                 "email": user.email,
-#                 "nickname": user.nickname,
-#                 "name": user.name,
-#                 "gender": user.gender,
-#                 "phone": user.phone
-#             }
-#         })
+    def get(self, request):
+        user = request.user
+        return Response({
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "nickname": user.nickname,
+                "name": user.name,
+                "gender": user.gender,
+                "phone": user.phone
+            }
+        })
     
-#     def patch(self,request):
-#         data = request.data
-#         user = request.user
+    def patch(self,request):
+        data = request.data
+        user = request.user
+        error_msg,status_code = AccountService.patch_my_info(user,data)
+        if error_msg is None:
+            return Response({
+            "user" :{
+                "id" : user.id,
+                "email": user.email,
+                "nickname": user.nickname,
+                "name": user.name,
+                "gender": user.gender,
+                "phone": user.phone
+            }
+        }, status=200)
+        return Response({"error":error_msg},status_code=status_code)
 
-#         nickname = data.get('nickname')
-#         phone = data.get('phone')
+# 차단
+class BlockUserView(APIView):
+    permission_classes = [IsAuthenticated]
 
-#         if User.objects.exclude(id=user.id).filter(nickname=nickname).exists():
-#             return Response({"error":"이미 사용 중인 닉네임입니다."},status=400)
-        
-#         if not re.match(r'01[016789]\d{7,8}$',phone):
-#             return Response({"error" : "전화번호 형식이 올바르지 않습니다."},status=400)
-        
-#         if not nickname and not phone:
-#             return Response({"error": "수정할 항목이 없습니다."}, status=400)
-        
-#         if 'nickname' in data:
-#             user.nickname = nickname
+    def post(self, request, user_id):
+        data,status_code = BlockUserService.block_user(request.user, user_id)
+        return Response(data,status=status_code)
 
-#         if 'phone' in data:
-#             user.phone = phone
-        
-#         user.save()
+# 차단 해제
+class UnblockUserView(APIView):
+    permission_classes = [IsAuthenticated]
 
-#         return Response({
-#             "user" :{
-#                 "id" : user.id,
-#                 "email": user.email,
-#                 "nickname": user.nickname,
-#                 "name": user.name,
-#                 "gender": user.gender,
-#                 "phone": user.phone
-#             }
-#         }, status=200)
-
-# class BlockUserService:
-#     @staticmethod
-#     def block_user(blocker, blocked_user_id):
-#         """
-#         유저 차단을 처리합니다.
-#         """
-#         try:
-#             blocked_user = User.objects.get(id=blocked_user_id)
-
-#             if blocker == blocked_user:
-#                 return {"error": "자기 자신을 차단할 수 없습니다."}, 400
-            
-#             if UserBlock.objects.filter(blocker=blocker, blocked_user=blocked_user).exists():
-#                 return {"error": "이미 차단된 유저입니다."}, 400
-            
-#             UserBlock.objects.create(blocker=blocker, blocked_user=blocked_user)
-#             return {"message": "유저가 차단되었습니다."}, 200
-            
-#         except User.DoesNotExist:
-#             return {"error": "존재하지 않는 유저는 차단할 수 없습니다."}, 404
-    
-#     @staticmethod
-#     def unblock_user(blocker, blocked_user_id):
-#         """
-#         유저 차단 해제를 처리합니다.
-#         """
-#         try:
-#             blocked_user = User.objects.get(id=blocked_user_id)
-
-#             if blocker == blocked_user:
-#                 return {"error": "자기 자신을 차단해제할 수 없습니다."}, 400
-
-#             if not UserBlock.objects.filter(blocker=blocker, blocked_user=blocked_user).exists():
-#                 return {"error": "해제할 차단이 존재하지 않습니다."}, 404
-
-#             UserBlock.objects.filter(blocker=blocker, blocked_user=blocked_user).delete()
-#             return {"message": "유저 차단이 해제되었습니다."}, 200
-#         except:
-#             return {"error": "존재하지 않는 유저는 차단해제할 수 없습니다."}, 404
-# # 차단
-# class BlockUserView(APIView):
-#     permission_classes = [IsAuthenticated]
-
-#     def post(self, request, user_id):
-#         return Response(*BlockUserService.block_user(request.user, user_id))
-# # 차단 해제
-# class UnblockUserView(APIView):
-#     permission_classes = [IsAuthenticated]
-
-#     def delete(self, request, user_id):
-#         return Response(*BlockUserService.unblock_user(request.user, user_id))
+    def delete(self, request, user_id):
+        return Response(*BlockUserService.unblock_user(request.user, user_id))
     
 # from .serializers import MyTokenObtainPairSerializer
 
