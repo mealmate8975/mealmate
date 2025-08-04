@@ -9,6 +9,7 @@ from .models import UserBlock
 User = get_user_model()
 
 class AccountService:
+    @staticmethod
     def register(validated_data):
         """
         회원가입
@@ -21,9 +22,11 @@ class AccountService:
             nickname=validated_data["nickname"],
             gender=validated_data["gender"]
         )
-    
+    @staticmethod
     def patch_my_info(user,data):
-        "회원정보 수정"
+        """
+        회원정보 수정
+        """
         nickname = data.get('nickname')
         phone = data.get('phone')
 
@@ -41,11 +44,24 @@ class AccountService:
 
         if 'phone' in data:
             user.phone = phone
-        
-        user.save()
 
+        user.save()
         return None,200
     
+    # last_login is null 케이스 대비 :
+    # 가입 후  한 번도 로그인하지 않은 유저는 last_login = None일 수 있으므로    
+    @staticmethod
+    def deactivate_account():
+        pass
+
+    @staticmethod
+    def activate_account():
+        pass
+
+    @staticmethod
+    def delete_account():
+        pass
+
 class BlockUserService:
     @staticmethod
     def block_user(blocker, blocked_user_id):

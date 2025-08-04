@@ -29,6 +29,7 @@ class CustomUser(AbstractBaseUser):
     nickname = models.CharField(max_length=50, unique= True)
     phone = models.CharField(max_length=50, blank=True, null=True)
     profile_image = models.ImageField(upload_to="profile_images/",blank=True,null=True,default="profile_images/default.jpeg")
+    is_active = models.BooleanField(default=True)
 
     USERNAME_FIELD = 'email' # 이메일로 로그인
     REQUIRED_FIELDS = ['name']
