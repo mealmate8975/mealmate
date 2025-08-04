@@ -2,7 +2,7 @@ from django.urls import path
 from . import views
 from .views import *
 from django.contrib.auth import views as auth_views
-from .views import LoginAPIView,RegisterView
+from .views import LoginAPIView,RegisterAPIView
 
 app_name = 'accounts'
 
@@ -12,7 +12,7 @@ urlpatterns = [
 
     # API 전용 URL (axios가 호출)
     path('login/', LoginAPIView.as_view(), name='login'),
-    path('register/', RegisterView.as_view(), name='register'),
+    path('register/', RegisterAPIView.as_view(), name='register'),
     # path('login/', auth_views.LoginView.as_view(template_name='accounts/login.html'), name='login'),
     
     path('block/<int:user_id>/', BlockUserView.as_view(), name='block-user'),

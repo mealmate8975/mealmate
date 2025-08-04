@@ -110,3 +110,20 @@ class BlockUserService:
                 "success": False,
                 "error": "존재하지 않는 유저는 차단해제할 수 없습니다."
             }, 404
+        
+    @staticmethod
+    def get_blocked_user(user):
+        """
+        차단한 유저 목록 조회
+        """
+        blocked_users = UserBlock.objects.filter(blocker=user).select_related('blocked_user')
+        return {
+            "blocked_users":[
+                {
+                    "name": b.blocked_user.name,
+                    "nickname" : b.blocked_user.nickname,
+                    "gender" : b.blocked_user.gender,
+                }
+                for b in blocked_users
+            ]
+        }

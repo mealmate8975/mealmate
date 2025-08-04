@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .serializers import LoginSerializer, RegisterSerializer
-from .accounts_service import AccountService,BlockUserService
+from .accounts_service import AccountService, BlockUserService
 
 User = get_user_model()
 
@@ -84,21 +84,32 @@ class UserMeView(APIView):
         }, status=200)
         return Response({"error":error_msg},status_code=status_code)
 
-# 차단
 class BlockUserView(APIView):
+    """
+    유저 차단
+    """
     permission_classes = [IsAuthenticated]
 
     def post(self, request, user_id):
         data,status_code = BlockUserService.block_user(request.user, user_id)
         return Response(data,status=status_code)
 
-# 차단 해제
 class UnblockUserView(APIView):
+    """
+    유저 차단 해제
+    """
     permission_classes = [IsAuthenticated]
 
     def delete(self, request, user_id):
         return Response(*BlockUserService.unblock_user(request.user, user_id))
-    
+
+class GetBlockedUserView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self,request):
+        data = BlockUserService.get_blocked_user(request.user)
+        return Response(data, status = 200)
+
 # from .serializers import MyTokenObtainPairSerializer
 
 # class RegisterView(APIView):

@@ -14,8 +14,6 @@ class CustomUserManager(BaseUserManager):
         user.save(using = self._db) # 연결된 db에 저장(_db)
         return user
 
-
-
 class CustomUser(AbstractBaseUser):
     objects = CustomUserManager() # 유저 생성이랑 연결
     GENDER_CHOICES = [
@@ -30,6 +28,7 @@ class CustomUser(AbstractBaseUser):
     gender = models.CharField(choices=GENDER_CHOICES, max_length=1)
     nickname = models.CharField(max_length=50, unique= True)
     phone = models.CharField(max_length=50, blank=True, null=True)
+    profile_image = models.ImageField(upload_to="profile_images/",blank=True,null=True,default="profile_images/default.jpeg")
 
     USERNAME_FIELD = 'email' # 이메일로 로그인
     REQUIRED_FIELDS = ['name']
