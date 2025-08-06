@@ -52,19 +52,56 @@ class AccountService:
         return None,200
     
     # last_login is null 케이스 대비 :
-    # 가입 후  한 번도 로그인하지 않은 유저는 last_login = None일 수 있으므로    
-    @staticmethod
-    def deactivate_account():
-        pass
+    # 가입 후  한 번도 로그인하지 않은 유저는 last_login = None일 수 있으므로
 
     @staticmethod
-    def activate_account():
-        pass
+    def deactivate_account(user):
+        """
+        계정 비활성화 로직(회원 탈퇴 요청)
+        """
+        if not user.is_active:
+            return False  # 이미 비활성화된 유저
+
+        try:
+            user.is_active = False
+            user.withdrawn_at = timezone.now()
+            user.save()
+            return True
+        except Exception:
+            return False
+
+    @staticmethod
+    def activate_account(user):
+        """
+        휴면 또는 탈퇴 유예 상태였던 유저를 재활성화
+        """
+        if user.is_active:
+            return False  # 이미 활성화된 유저
+
+        try:
+            user.is_active = True
+            user.withdrawn_at = None
+            user.save()
+            return True
+        except Exception:
+            return False
+
+    @staticmethod
+    def deactivate_dormant_users():
+        """
+        1년 이상 미접속 유저 휴면 처리 로직
+        """
+        threshold = timezone.now() - timedelta(days=365)
+        User.objects.filter(
+            is_active=True,
+            last_login__isnull=False,
+            last_login__lte=threshold
+        ).update(is_active=False)
 
     @staticmethod
     def delete_soft_deleted_accounts():
         """
-        삭제 유예기간이 끝난 유저 삭제
+        삭제 유예기간이 끝난 유저 삭제 로직
         """
         try:
             threshold = timezone.now() - timedelta(days=30)
