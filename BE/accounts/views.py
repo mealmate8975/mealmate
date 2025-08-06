@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import get_user_model
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import IsAdminUser
 
 from .serializers import LoginSerializer, RegisterSerializer
 from .accounts_service import AccountService, BlockUserService
@@ -47,6 +48,17 @@ class LoginAPIView(APIView):
                 "message": error_message
             }
             }, status=400)
+    
+class DeleteSoftDeletedAccountsAPIView(APIView):
+    """
+    삭제 유예기간이 끝난 유저 삭제
+    """
+    permission_classes = [IsAdminUser]
+    def get(self,request):
+        cnt = AccountService.delete_soft_deleted_accounts()
+        if cnt == 0:
+            return Response({"message" : "삭제할 유저가 없습니다."},status = 200)
+        return Response({"message" : f"{cnt}명의 유저 삭제 완료"},status = 200)
 
 class UserMeView(APIView):
     """

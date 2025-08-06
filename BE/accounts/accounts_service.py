@@ -63,6 +63,9 @@ class AccountService:
 
     @staticmethod
     def delete_soft_deleted_accounts():
+        """
+        삭제 유예기간이 끝난 유저 삭제
+        """
         try:
             threshold = timezone.now() - timedelta(days=30)
             delete_target = User.objects.filter(
