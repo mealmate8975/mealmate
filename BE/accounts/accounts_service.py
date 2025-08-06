@@ -1,12 +1,15 @@
 # BE/accounts/accounts_service.py
-
 import re
+from django.utils import timezone
+from datetime import timedelta
+# import logging
 
 from django.contrib.auth import get_user_model
 
 from .models import UserBlock
 
 User = get_user_model()
+# logger = logging.getLogger(__name__)
 
 class AccountService:
     @staticmethod
@@ -59,8 +62,19 @@ class AccountService:
         pass
 
     @staticmethod
-    def delete_account():
-        pass
+    def delete_soft_deleted_accounts():
+        try:
+            threshold = timezone.now() - timedelta(days=30)
+            delete_target = User.objects.filter(
+                is_active=False,
+                withdrawn_at__isnull=False,
+                withdrawn_at__lte=threshold
+                )
+            cnt, _ = delete_target.delete()
+            return cnt
+        except Exception as e:
+            # logger.error(f"[유저 삭제 실패] 예외 발생: {str(e)}", exc_info=True)  # 로깅은 추후 사용
+            return 0
 
 class BlockUserService:
     @staticmethod
