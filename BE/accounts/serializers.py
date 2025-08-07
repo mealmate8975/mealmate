@@ -1,26 +1,11 @@
 # BE/accounts/serializers.py
 
 from rest_framework import serializers
-from django.contrib.auth import authenticate
 from .models import CustomUser
 import re
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, password_validation
+from django.core.exceptions import ValidationError as DjangoValidationError
 
-class LoginSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-    password = serializers.CharField(write_only = True)
-    
-    def validate(self, data):
-        user = authenticate(
-            request = self.context.get('request'),
-            username = data.get("email"),  
-            password = data.get("password")
-        )
-        if not user:
-            raise serializers.ValidationError ("이메일 혹은 비밀번호가 일치하지 않습니다.")
-        data['user'] = user
-        return data
-    
 class RegisterSerializer(serializers.Serializer):
     email = serializers.EmailField()
     name = serializers.CharField(write_only=True)
@@ -39,6 +24,34 @@ class RegisterSerializer(serializers.Serializer):
         if not re.match(r'010\d{8}$',data):
             raise serializers.ValidationError("전화번호 형식 오류")
         return data
+
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only = True)
+    
+    def validate(self, data):
+        user = authenticate(
+            request = self.context.get('request'),
+            username = data.get("email"),  
+            password = data.get("password")
+        )
+        if not user:
+            raise serializers.ValidationError ("이메일 혹은 비밀번호가 일치하지 않습니다.")
+        data['user'] = user
+        return data
+
+class PasswordChangeSerializer(serializers.Serializer):
+    old_password = serializers.CharField()
+    new_password = serializers.CharField()
+
+    def validate_new_password(self, value):
+        user = self.context['request'].user # self.context['request'].user는 현재 요청을 보낸 로그인된 사용자 객체
+        try:
+            password_validation.validate_password(value, user=user)
+        except DjangoValidationError as e:
+            raise serializers.ValidationError(e.messages)
+        return value
+
     
 # from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 # from rest_framework_simplejwt.exceptions import AuthenticationFailed

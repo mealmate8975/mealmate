@@ -170,7 +170,7 @@ class UnblockUserView(APIView):
         if status_code >= 400:
             return Response({
                 "error": {
-                    "code": "unblock_failed",  # 상황에 따라 더 세분화 가능
+                    "code": "unblock_failed",
                     "message": data.get("error", "차단 해제 중 오류가 발생했습니다.")
                 }
             }, status=status_code)

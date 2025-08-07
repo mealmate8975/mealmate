@@ -1,3 +1,5 @@
+#config/settings.py
+
 from pathlib import Path
 from dotenv import load_dotenv # dotenv 라이브러리 임포트
 import os

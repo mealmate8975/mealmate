@@ -193,17 +193,22 @@ class BlockUserService:
         
     @staticmethod
     def get_blocked_user(user):
-        """
-        차단한 유저 목록 조회
-        """
-        blocked_users = UserBlock.objects.filter(blocker=user).select_related('blocked_user')
-        return {
-            "blocked_users":[
-                {
-                    "name": b.blocked_user.name,
-                    "nickname" : b.blocked_user.nickname,
-                    "gender" : b.blocked_user.gender,
+        try:
+            blocked_users = UserBlock.objects.filter(blocker=user).select_related('blocked_user')
+            return {
+                "blocked_users":[
+                    {
+                        "name": b.blocked_user.name,
+                        "nickname" : b.blocked_user.nickname,
+                        "gender" : b.blocked_user.gender,
+                    }
+                    for b in blocked_users
+                ]
+            }, 200
+        except Exception as e:
+            return {
+                "error": {
+                    "code": "blocked_list_failed",
+                    "message": "차단 목록 조회 중 오류가 발생했습니다."
                 }
-                for b in blocked_users
-            ]
-        }
+            }, 500
