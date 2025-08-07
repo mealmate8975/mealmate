@@ -76,15 +76,20 @@ class AccountService:
         휴면 또는 탈퇴 유예 상태였던 유저를 재활성화
         """
         if user.is_active:
-            return False  # 이미 활성화된 유저
+            return False, None  # 이미 활성화된 유저
+        
+        if user.withdrawn_at:
+            reason = "withdrawn_cancellation"
+        else:
+            reason = "dormant_wakeup"
 
         try:
             user.is_active = True
             user.withdrawn_at = None
             user.save()
-            return True
+            return True, reason
         except Exception:
-            return False
+            return False, None
 
     @staticmethod
     def deactivate_dormant_users():
@@ -111,10 +116,10 @@ class AccountService:
                 withdrawn_at__lte=threshold
                 )
             cnt, _ = delete_target.delete()
-            return cnt
+            return {"status": "ok", "deleted_count": cnt}
         except Exception as e:
             # logger.error(f"[유저 삭제 실패] 예외 발생: {str(e)}", exc_info=True)  # 로깅은 추후 사용
-            return 0
+            return {"status": "error", "deleted_count": 0}
 
 class BlockUserService:
     @staticmethod
@@ -127,26 +132,31 @@ class BlockUserService:
 
             if blocker == blocked_user:
                 return {
-                    "success": False,
-                    "error": "자기 자신을 차단할 수 없습니다."
+                    "error": {
+                        "code": "self_block",
+                        "message": "자기 자신을 차단할 수 없습니다."
+                    }
                 }, 400
             relation_qs = UserBlock.objects.filter(blocker=blocker, blocked_user=blocked_user)
             if relation_qs.exists():
                 return {
-                    "success": False,
-                    "error": "이미 차단된 유저입니다."
+                    "error": {
+                        "code": "already_blocked",
+                        "message": "이미 차단된 유저입니다."
+                    }
                 }, 400
             
             relation_qs.create(blocker=blocker, blocked_user=blocked_user)
             return {
-                "success": True,
                 "message": "유저가 차단되었습니다."
             }, 200
             
         except User.DoesNotExist:
             return {
-                "success": False,
-                "error": "존재하지 않는 유저는 차단할 수 없습니다."
+                "error": {
+                    "code": "user_not_found",
+                    "message": "존재하지 않는 유저는 차단할 수 없습니다."
+                }
             }, 404
     
     @staticmethod
