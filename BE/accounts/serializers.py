@@ -61,7 +61,15 @@ class PasswordChangeSerializer(serializers.Serializer):
             raise serializers.ValidationError(e.messages)
         return value
 
-    
+class PasswordVerifySerializer(serializers.Serializer):
+    password = serializers.CharField(write_only=True)
+
+    def validate_password(self,value):
+        user = self.context['request'].user # self.context['request'].user는 현재 요청을 보낸 로그인된 사용자 객체
+        if not user.check_password(value):
+            raise serializers.ValidationError("비밀번호가 일치하지 않습니다.", code="incorrect_password")
+        return value
+
 # from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 # from rest_framework_simplejwt.exceptions import AuthenticationFailed
     

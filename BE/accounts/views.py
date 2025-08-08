@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAdminUser
 
-from .serializers import LoginSerializer, RegisterSerializer, PasswordChangeSerializer
+from .serializers import LoginSerializer, RegisterSerializer, PasswordChangeSerializer,PasswordVerifySerializer
 from .accounts_service import AccountService, BlockUserService
 
 User = get_user_model()
@@ -98,7 +98,35 @@ class DeleteSoftDeletedAccountsAPIView(APIView):
             }
         }, status=200)
 
-class UserMeView(APIView):
+class VerifyPasswordAPIView(APIView):
+    def post(self,request):
+        serializer = PasswordVerifySerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            return Response({
+            "message": {
+                "code": "password_verified",
+                "message": "비밀번호가 일치합니다."
+            }
+            }, status=200)
+        error = serializer.errors.get('password', [None])[0]
+        error_message = str(error)
+        error_code = getattr(error, 'code', 'invalid_request')
+
+        if error_code == "incorrect_password":
+            status_code = 403
+        elif error_code == "required":
+            status_code = 400
+        else:
+            status_code = 400
+
+        return Response({
+            "error": {
+                "code": error_code,
+                "message": error_message
+            }
+        }, status=status_code)
+
+class UserMeAPIView(APIView):
     """
     개인정보 확인과 수정
     """
@@ -134,7 +162,7 @@ class UserMeView(APIView):
         }, status=200)
         return Response({
             "error": {
-                "code": "update_failed",  # 필요시 세분화 가능
+                "code": "update_failed",
                 "message": error_msg
             }
         }, status=status_code)
@@ -153,6 +181,12 @@ class PasswordChangeAPIView(APIView):
         request.user.save()
 
         return Response({'message': '비밀번호가 성공적으로 변경되었습니다.'})
+
+# class PasswordResetAPIView(APIView):
+#     pass
+
+# class FindPasswordAPIView(APIView):
+#     pass
     
 class BlockUserView(APIView):
     """

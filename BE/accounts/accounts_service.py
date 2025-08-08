@@ -26,6 +26,7 @@ class AccountService:
             nickname=validated_data["nickname"],
             gender=validated_data["gender"]
         )
+
     @staticmethod
     def patch_my_info(user,data):
         """
@@ -58,7 +59,7 @@ class AccountService:
     @staticmethod
     def deactivate_account(user):
         """
-        계정 비활성화 로직(회원 탈퇴 요청)
+        회원 탈퇴 요청 로직
         """
         if not user.is_active:
             return False  # 이미 비활성화된 유저
