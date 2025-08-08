@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAdminUser
 
-from .serializers import LoginSerializer, RegisterSerializer
+from .serializers import LoginSerializer, RegisterSerializer, PasswordChangeSerializer
 from .accounts_service import AccountService, BlockUserService
 
 User = get_user_model()
@@ -138,7 +138,22 @@ class UserMeView(APIView):
                 "message": error_msg
             }
         }, status=status_code)
+    
+class PasswordChangeAPIView(APIView):
+    """
+    비빌번호 변경 APIView
+    """
+    permission_classes = [IsAuthenticated]
 
+    def patch(self, request):
+        serializer = PasswordChangeSerializer(data=request.data,context={'request':request})
+        serializer.is_valid(raise_exception=True)
+
+        request.user.set_password(serializer.validated_data['new_password'])
+        request.user.save()
+
+        return Response({'message': '비밀번호가 성공적으로 변경되었습니다.'})
+    
 class BlockUserView(APIView):
     """
     유저 차단
@@ -183,6 +198,9 @@ class UnblockUserView(APIView):
         }, status=status_code)
 
 class GetBlockedUserView(APIView):
+    """
+    차단한 유저 목록 가져오기
+    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request):

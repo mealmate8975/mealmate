@@ -43,7 +43,16 @@ class LoginSerializer(serializers.Serializer):
 class PasswordChangeSerializer(serializers.Serializer):
     old_password = serializers.CharField()
     new_password = serializers.CharField()
-
+    
+    def validate_old_password(self, value):
+        """
+        기존 비밀번호 확인
+        """
+        user = self.context['request'].user
+        if not user.check_password(value): # check_password : 일치하면 True, 아니면 False를 반환
+            raise serializers.ValidationError("기존 비밀번호가 일치하지 않습니다.")
+        return value
+    
     def validate_new_password(self, value):
         user = self.context['request'].user # self.context['request'].user는 현재 요청을 보낸 로그인된 사용자 객체
         try:
