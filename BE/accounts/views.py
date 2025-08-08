@@ -107,7 +107,7 @@ class VerifyPasswordAPIView(APIView):
                 "code": "password_verified",
                 "message": "비밀번호가 일치합니다."
             }
-            }, status=200)
+            }, status=200) # 클라이언트는 이 응답을 받으면 “비밀번호 인증 통과” 상태라고 간주하고, 다음 요청에 X-Password-Verified: true 헤더를 추가
         error = serializer.errors.get('password', [None])[0]
         error_message = str(error)
         error_code = getattr(error, 'code', 'invalid_request')
@@ -146,6 +146,15 @@ class UserMeAPIView(APIView):
         })
     
     def patch(self,request):
+        # 비밀번호 확인이 앞서 이루어졌는지 확인(임시)
+        if request.headers.get("X-Password-Verified") != "true":
+            return Response({
+                "error":{
+                    "code" : "password_verification_required",
+                    "message" : "비밀번호 확인이 필요합니다."
+                }
+            },status=403)
+        
         data = request.data
         user = request.user
         error_msg,status_code = AccountService.patch_my_info(user,data)
@@ -187,6 +196,31 @@ class PasswordChangeAPIView(APIView):
 
 # class FindPasswordAPIView(APIView):
 #     pass
+
+class AccountSoftDeleteAPIView(APIView):
+    def patch(self,request):
+        # 비밀번호 확인이 앞서 이루어졌는지 확인(임시)
+        if request.headers.get("X-Password-Verified") != "true":
+            return Response({
+                "error":{
+                    "code" : "password_verification_required",
+                    "message" : "비밀번호 확인이 필요합니다."
+                }
+            },status=403)
+        success,error_msg = AccountService.account_soft_delete(request.user)
+        if success:
+            return Response({
+                "message": {
+                    "code": "account_soft_deleted",
+                    "message": "계정이 성공적으로 비활성화되었습니다."
+                }
+            }, status=200)
+        return Response({
+            "error": {
+                "code": "soft_delete_failed",
+                "message": error_msg
+            }
+        }, status=400)
     
 class BlockUserView(APIView):
     """

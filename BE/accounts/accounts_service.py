@@ -57,20 +57,21 @@ class AccountService:
     # 가입 후  한 번도 로그인하지 않은 유저는 last_login = None일 수 있으므로
 
     @staticmethod
-    def deactivate_account(user):
+    def account_soft_delete(user):
         """
         회원 탈퇴 요청 로직
         """
         if not user.is_active:
-            return False  # 이미 비활성화된 유저
+            return False, "이미 비활성화된 유저입니다."  # 이미 비활성화된 유저
 
         try:
             user.is_active = False
             user.withdrawn_at = timezone.now()
             user.save()
-            return True
-        except Exception:
-            return False
+            return True, None
+        except Exception as e:
+            # logger.error(f"탈퇴 처리 중 예외 발생: {str(e)}")
+            return False, "계정 비활성화 중 예기치 못한 오류가 발생했습니다."
 
     @staticmethod
     def activate_account(user):
