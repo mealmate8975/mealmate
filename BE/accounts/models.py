@@ -32,6 +32,7 @@ class CustomUser(AbstractBaseUser):
     profile_image = models.ImageField(upload_to="profile_images/",blank=True,null=True,default="profile_images/default.jpeg")
     is_active = models.BooleanField(default=True)
     withdrawn_at = models.DateTimeField(blank=True, null=True)
+    email_verified = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'email' # 이메일로 로그인
     REQUIRED_FIELDS = ['name']

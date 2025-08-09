@@ -4,6 +4,12 @@ import re
 from django.utils import timezone
 from datetime import timedelta
 # import logging
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from django.contrib.auth.tokens import default_token_generator
+from django.urls import reverse
+from django.core.mail import send_mail, EmailMultiAlternatives  # HTML 메일까지 고려 시
+from django.conf import settings
 
 from django.contrib.auth import get_user_model
 
@@ -123,6 +129,13 @@ class AccountService:
         except Exception as e:
             # logger.error(f"[유저 삭제 실패] 예외 발생: {str(e)}", exc_info=True)  # 로깅은 추후 사용
             return {"status": "error", "deleted_count": 0}
+    
+    @staticmethod
+    def send_verification_email(user):
+        """
+        인증 메일 발송
+        """
+        uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
 
 class BlockUserService:
     @staticmethod

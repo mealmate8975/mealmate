@@ -18,5 +18,5 @@ urlpatterns = [
     path('block/<int:user_id>/', BlockUserView.as_view(), name='block-user'),
     path('unblock/<int:user_id>/', UnblockUserView.as_view(), name='unblock-user'),
 
-    path('me/', UserMeView.as_view(), name='me'),
+    path('me/', UserMeAPIView.as_view(), name='me'),
 ]

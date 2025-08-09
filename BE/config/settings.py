@@ -1,4 +1,4 @@
-#config/settings.py
+#BE/config/settings.py
 
 from pathlib import Path
 from dotenv import load_dotenv # dotenv 라이브러리 임포트
@@ -178,3 +178,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # LOGIN_URL = '/api/accounts/login/'
 LOGIN_URL = '/accounts/login/' # django 임시
 LOGIN_REDIRECT_URL = '/api/pages/pagelist'  # 또는 로그인 후 이동시키고 싶은 URL
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend' # 나중에 SMTP로 바꿀 땐 EMAIL_BACKEND만 교체하고 SMTP 세팅 추가
+DEFAULT_FROM_EMAIL = 'no-reply@mealmate.local'
+PASSWORD_RESET_TIMEOUT = 60 * 60 * 2 # 2시간 , 토큰 만료시간
