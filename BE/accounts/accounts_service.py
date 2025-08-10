@@ -8,9 +8,9 @@ from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
 from django.urls import reverse
-from django.core.mail import send_mail, EmailMultiAlternatives  # HTML 메일까지 고려 시
+from django.core.mail import send_mail
+# from django.core.mail import EmailMultiAlternatives  # HTML 메일까지 고려 시
 from django.conf import settings
-
 from django.contrib.auth import get_user_model
 
 from .models import UserBlock
@@ -131,11 +131,33 @@ class AccountService:
             return {"status": "error", "deleted_count": 0}
     
     @staticmethod
-    def send_verification_email(user):
+    def send_verification_email(user,request): # class VerifyEmailAPIView(APIView):
         """
-        인증 메일 발송
+        인증 메일 발송(회원가입 직후 호출)
+        동작: 사용자가 메일 링크 클릭 → 백엔드 뷰가 직접 토큰 검증 → 결과에 따라 프론트로 리다이렉트(성공/실패 코드 포함)
         """
         uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        
+        # reverse()를 사용하여 'accounts:verify-email' URL 패턴의 상대 경로 생성
+        # kwargs로 uidb64(유저 PK를 base64로 인코딩한 값)와 token(이메일 인증 토큰)을 전달
+        # 예: "/accounts/verify-email/MjE/abc123token/"
+        relative_url = reverse('accounts:verify-email',kwargs={'uidb64':uidb64,'token':token})
+
+        # request.build_absolute_uri()를 사용하여 현재 요청의 도메인과 상대 경로를 결합해 절대 URL 생성
+        # 예: "https://example.com/accounts/verify-email/MjE/abc123token/"
+        # 이렇게 만든 URL을 이메일 본문에 넣어 사용자가 클릭하면 인증 뷰로 접근 가능
+        verify_url = request.build_absolute_uri(relative_url) # 결과 화면 UX를 프론트에서 풍부하게 보여주려면 검증 후 리다이렉트 처리가 추가로 필요
+        # 이후 UX를 풍부하게 하고 싶을 때 SPA 방식으로 전환/병행(이때는 이메일 링크를 프론트로 보내고, 프론트에서 검증 API 호출)
+
+        subject = "[Mealmate] 이메일 인증 안내"
+        msg_txt = f"Mealmate 가입을 환영합니다! \n 아래 링크를 2시간 이내에 클릭해 이메일 인증을 완료해 주세요.\n {verify_url}\n 본인이 요청하지 않았다면 이 메일을 무시하셔도 됩니다."
+        # 발송함수 호출
+        try:
+            send_mail(subject,msg_txt,settings.DEFAULT_FROM_EMAIL,[user.email],fail_silently=False)
+            return True, None
+        except:
+            return False, "인증 메일 발송 중 오류가 발생했습니다."
 
 class BlockUserService:
     @staticmethod

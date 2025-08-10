@@ -19,4 +19,6 @@ urlpatterns = [
     path('unblock/<int:user_id>/', UnblockUserView.as_view(), name='unblock-user'),
 
     path('me/', UserMeAPIView.as_view(), name='me'),
+    
+    path('verify-email/<uidb64>/<token>/',VerifyPasswordAPIView.as_view(),name='verify-email')
 ]
