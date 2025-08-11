@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAdminUser
+from django.db import transaction
 
 from .serializers import LoginSerializer, RegisterSerializer, PasswordChangeSerializer,PasswordVerifySerializer
 from .accounts_service import AccountService, BlockUserService
@@ -19,6 +20,10 @@ class RegisterAPIView(APIView):
         if serializer.is_valid():
             validated_data = serializer.validated_data
             user = AccountService.register(validated_data)
+            # 트랜잭션 커밋 후 이메일 발송
+            transaction.on_commit(
+                lambda: AccountService.send_verification_email(user, request)
+            )
             return Response({"message": "회원가입 성공",},status=201)
         error_message = next(iter(serializer.errors.values()))[0]
         return Response({
