@@ -21,6 +21,7 @@ from smtplib import (
     SMTPException,
 )
 from django.urls import NoReverseMatch
+from django.shortcuts import get_object_or_404
 
 from .models import UserBlock
 
@@ -45,7 +46,7 @@ class AccountService:
     @staticmethod
     def patch_my_info(user,data):
         """
-        회원정보 수정
+        회원정보 수정 (비밀번호 변경은 APIView에 따로 구현)
         """
         nickname = data.get('nickname')
         phone = data.get('phone')
@@ -181,6 +182,45 @@ class AccountService:
         except Exception as e:
             # logger.error("Unknown error", extra=...)
             return False, "인증 메일 발송 중 예기치 못한 오류가 발생했습니다."
+        
+    @staticmethod
+    def send_reset_password_email(email,request):
+        """
+        비밀번호 초기화
+        이메일 기입 시 인증 메일 발송 → 사용자가 메일 링크 클릭 → 백엔드 뷰가 직접 토큰 검증 → 성공 시 비밀번호 초기화, 비밀번호 재설정 화면으로 이동
+        """
+        # 1) 사용자 조회 (존재 노출 방지)
+        user = User.objects.filter(email__iexact=email).first()
+        if not user:
+            return True, None # 존재하지 않아도 "성공"으로 처리
+        
+        # 2) uid/token 생성
+        uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        
+        try:
+            # 3) reset confirm URL 생성
+            relative_url = reverse('accounts:password-reset-confirm',kwargs={'uidb64':uidb64,'token':token})
+            reset_url = request.build_absolute_uri(relative_url)
+           
+            # 4) 메일 발송 (비밀번호 재설정 문구)
+            subject = "[Mealmate] 비밀번호 초기화"
+            msg_txt = f"비밀번호 재설정을 요청하셨습니다.\n 아래 링크를 30분 이내에 클릭하여 새 비밀번호를 설정해 주세요.\n {reset_url}\n 본인이 요청하지 않았다면 이 메일을 무시해 주세요."
+            # 발송함수 호출
+            send_mail(subject,msg_txt,settings.DEFAULT_FROM_EMAIL,[user.email],fail_silently=False)
+            return True, None
+        except BadHeaderError: # 메일 헤더/포맷 오류 (개발 실수 계열)
+            # logger.warning("Bad header", extra=...)
+            return False, "메일 헤더가 유효하지 않아 발송에 실패했습니다."
+        except (SMTPAuthenticationError, SMTPConnectError, SMTPServerDisconnected, SMTPException, TimeoutError, socket.gaierror):
+            # SMTP 인증/연결 문제 (환경 설정/인프라 계열)
+            # logger.error("SMTP error", extra=...)
+            return False, "이메일 서버와 통신 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
+        except NoReverseMatch: # URL 생성/리버스 실패 (라우팅 설정 계열)
+            # logger.error("URL reverse error", extra=...)
+            return False, "재설정 링크 생성 중 오류가 발생했습니다."
+        except Exception:
+            return False, "비밀번호 재설정 메일 발송 중 예기치 못한 오류가 발생했습니다."
 
 class BlockUserService:
     @staticmethod
