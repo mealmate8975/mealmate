@@ -170,6 +170,9 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication', # SessionAuthentication을 테스트에서만 허용하도록 추가 -> @login_required가 붙은 뷰가 admin 로그인 상태로도 작동
     ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
 }
 
 MEDIA_URL = '/media/'

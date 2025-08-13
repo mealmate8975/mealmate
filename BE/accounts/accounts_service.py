@@ -184,15 +184,15 @@ class AccountService:
             return False, "인증 메일 발송 중 예기치 못한 오류가 발생했습니다."
         
     @staticmethod
-    def send_reset_password_email(email,request):
+    def reset_password(email:str,request):
         """
         비밀번호 초기화
-        이메일 기입 시 인증 메일 발송 → 사용자가 메일 링크 클릭 → 백엔드 뷰가 직접 토큰 검증 → 성공 시 비밀번호 초기화, 비밀번호 재설정 화면으로 이동
+        이메일 기입 시 인증 메일 발송 → 사용자가 메일 링크 클릭 → 백엔드 뷰가 직접 토큰 검증 → 성공 시 비밀번호 재설정 화면으로 이동
         """
         # 1) 사용자 조회 (존재 노출 방지)
         user = User.objects.filter(email__iexact=email).first()
         if not user:
-            return True, None # 존재하지 않아도 "성공"으로 처리
+            return False, "사용자가 존재하지 않아 실패"
         
         # 2) uid/token 생성
         uidb64 = urlsafe_base64_encode(force_bytes(user.pk))

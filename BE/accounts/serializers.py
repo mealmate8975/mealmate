@@ -5,6 +5,17 @@ from .models import CustomUser
 import re
 from django.contrib.auth import authenticate, password_validation
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+
+    def validate_email(self,value):
+        value = value.strip() # 공백 제거
+        value = User.objects.normalize_email(value) # @뒤의 문자들만 모두 소문자로 바꿈
+        return value
 
 class RegisterSerializer(serializers.Serializer):
     email = serializers.EmailField()

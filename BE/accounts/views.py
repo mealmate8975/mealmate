@@ -2,12 +2,11 @@
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import get_user_model
-from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAdminUser
 from django.db import transaction
+from rest_framework.permissions import AllowAny
 
 from .serializers import LoginSerializer, RegisterSerializer, PasswordChangeSerializer,PasswordVerifySerializer
 from .accounts_service import AccountService, BlockUserService
@@ -135,8 +134,6 @@ class UserMeAPIView(APIView):
     """
     개인정보 확인과 수정
     """
-    permission_classes = [IsAuthenticated]
-
     def get(self, request):
         user = request.user
         return Response({
@@ -183,10 +180,8 @@ class UserMeAPIView(APIView):
     
 class PasswordChangeAPIView(APIView):
     """
-    비빌번호 변경 APIView
+    비빌번호 변경
     """
-    permission_classes = [IsAuthenticated]
-
     def patch(self, request):
         serializer = PasswordChangeSerializer(data=request.data,context={'request':request})
         serializer.is_valid(raise_exception=True)
@@ -196,11 +191,18 @@ class PasswordChangeAPIView(APIView):
 
         return Response({'message': '비밀번호가 성공적으로 변경되었습니다.'})
 
-# class PasswordResetAPIView(APIView):
-#     pass
+class PasswordResetAPIView(APIView):
+    """
+    비밀번호 재설정
+    """
+    permission_classes = [AllowAny]
 
-# class FindPasswordAPIView(APIView):
-#     pass
+    def post(self,request):
+        email = request.data["email"]
+        success,msg = AccountService.send_reset_password_email(email,request)
+        if not success:
+            return Response("error":{},status=)
+        return Response("message":{},status=)
 
 class AccountSoftDeleteAPIView(APIView):
     def patch(self,request):
@@ -231,8 +233,6 @@ class BlockUserView(APIView):
     """
     유저 차단
     """
-    permission_classes = [IsAuthenticated]
-
     def post(self, request, user_id):
         data, status_code = BlockUserService.block_user(request.user, user_id)
 
@@ -250,8 +250,6 @@ class UnblockUserView(APIView):
     """
     유저 차단 해제
     """
-    permission_classes = [IsAuthenticated]
-
     def delete(self, request, user_id):
         data, status_code = BlockUserService.unblock_user(request.user, user_id)
         
@@ -274,8 +272,6 @@ class GetBlockedUserView(APIView):
     """
     차단한 유저 목록 가져오기
     """
-    permission_classes = [IsAuthenticated]
-
     def get(self, request):
         data, status_code = BlockUserService.get_blocked_user(request.user)
 
