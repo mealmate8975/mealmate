@@ -7,8 +7,15 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAdminUser
 from django.db import transaction
 from rest_framework.permissions import AllowAny
+from django.contrib.auth.tokens import default_token_generator
 
-from .serializers import LoginSerializer, RegisterSerializer, PasswordChangeSerializer,PasswordVerifySerializer
+from .serializers import (
+    LoginSerializer, 
+    RegisterSerializer, 
+    PasswordChangeSerializer,
+    PasswordVerifySerializer,
+    PasswordResetRequestSerializer,
+)
 from .accounts_service import AccountService, BlockUserService
 
 User = get_user_model()
@@ -198,11 +205,21 @@ class PasswordResetAPIView(APIView):
     permission_classes = [AllowAny]
 
     def post(self,request):
-        email = request.data["email"]
-        success,msg = AccountService.send_reset_password_email(email,request)
-        if not success:
-            return Response("error":{},status=)
-        return Response("message":{},status=)
+        serializer =  PasswordResetRequestSerializer(data = request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_email = serializer.validated_data["email"]
+        data = AccountService.reset_password(validated_email,request)
+        if data["code"] == "NOT_FOUND_NOOP" or data["code"] == "FOUND_SENT":
+            return Response({"message": {
+                "code": "password_reset_email_sent",
+                "message": "비밀번호 재설정 안내를 이메일로 전송했습니다."
+            }},status=200)
+        return Response({
+        "error": {
+            "code": "password_reset_send_failed",
+            "message": "이메일 전송 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
+        }
+        },status=500)
 
 class AccountSoftDeleteAPIView(APIView):
     def patch(self,request):
