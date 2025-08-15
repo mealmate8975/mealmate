@@ -39,6 +39,13 @@ class RegisterAPIView(APIView):
             }
         }, status=400)
 
+class VerifyEmailAPIView(APIView):
+    """
+    검증 엔드포인트(메일 인증 링크 클릭 시 토큰/UID 검증 후 email_verified를 변경하는 로직)
+    """
+    def post():
+        pass
+
 class LoginAPIView(APIView):
     def post(self, request):
         serializer = LoginSerializer(data=request.data, context={'request': request})
@@ -81,7 +88,7 @@ class LoginAPIView(APIView):
     
 class DeleteSoftDeletedAccountsAPIView(APIView):
     """
-    삭제 유예기간이 끝난 유저 삭제
+    삭제 유예 기간이 끝난 유저 삭제
     """
     permission_classes = [IsAdminUser]
     def get(self,request):
@@ -155,7 +162,7 @@ class UserMeAPIView(APIView):
         })
     
     def patch(self,request):
-        # 비밀번호 확인이 앞서 이루어졌는지 확인(임시)
+        # 비밀번호 확인이 앞서 이루어졌는지 확인(프로토타입용 임시)
         if request.headers.get("X-Password-Verified") != "true":
             return Response({
                 "error":{

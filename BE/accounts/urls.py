@@ -2,7 +2,16 @@ from django.urls import path
 from . import views
 from .views import *
 from django.contrib.auth import views as auth_views
-from .views import LoginAPIView,RegisterAPIView
+from .views import (
+    LoginAPIView,
+    RegisterAPIView,
+    DeleteSoftDeletedAccountsAPIView,
+    VerifyPasswordAPIView,
+    UserMeAPIView,
+    PasswordChangeAPIView,
+    PasswordResetAPIView,
+    AccountSoftDeleteAPIView,
+    )
 
 app_name = 'accounts'
 
@@ -20,5 +29,7 @@ urlpatterns = [
 
     path('me/', UserMeAPIView.as_view(), name='me'),
     
-    path('verify-email/<uidb64>/<token>/',VerifyPasswordAPIView.as_view(),name='verify-email')
+    path('verify-email/<uidb64>/<token>/',?.as_view(),name='verify-email'),
+
+    path('password-reset/<uidb64>/<token>/',?.as_view(),name='password-reset'),
 ]
