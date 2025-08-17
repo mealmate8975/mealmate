@@ -8,6 +8,11 @@ from rest_framework.permissions import IsAdminUser
 from django.db import transaction
 from rest_framework.permissions import AllowAny
 from django.contrib.auth.tokens import default_token_generator
+from django.utils.encoding import force_str
+from django.utils.http import urlsafe_base64_decode
+from django.conf import settings
+from urllib.parse import urlencode
+from django.shortcuts import redirect
 
 from .serializers import (
     LoginSerializer, 
@@ -41,11 +46,42 @@ class RegisterAPIView(APIView):
 
 class VerifyEmailAPIView(APIView):
     """
-    검증 엔드포인트(메일 인증 링크 클릭 시 토큰/UID 검증 후 email_verified를 변경하는 로직)
+    이메일 인증: 메일 링크 클릭 시 토큰/UID 검증 후 email_verified를 갱신.
+    - settings.VERIFY_EMAIL_REDIRECT 가 설정되어 있으면, 해당 URL로 결과를 쿼리스트링으로 리다이렉트
+    - 없으면 JSON 응답
     """
-    def post():
-        pass
+    permission_classes = [AllowAny]
 
+    def get(self,request,uidb64,token):
+        # 1) uid → user 조회
+        try:
+            # uidb64 복호화 → 사용자 조회
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError):
+            return self._respond(request,400,"invalid_uid","잘못된 사용자 식별입니다.")
+        except User.DoesNotExist:
+            return self._respond(request,404,"user_not_found","해당 사용자를 찾을 수 없습니다.")
+        
+        # 2) 이미 인증된 계정
+        if getattr(user,"email_verified",False):
+            return self._respond(request,200,"already_verified","이미 이메일 인증이 완료되었습니다.")
+        
+        # 3) 토큰 검증
+        if not default_token_generator.check_token(user,token): # default_token_generator.check_token(user, token) 검증
+            return self._respond(request,400,"invalid_or_expired_token","토큰이 유효하지 않거나 만료되었습니다.")
+        
+        # 4) 인증 처리
+        user.email_verified = True # 성공 시 email_verified=True 저장
+        user.save(update_fields=["email_verified"])
+        return self._respond(request,200,"verify_success","이메일 인증이 완료되었습니다.")
+    
+    def _respond(self, request, code, message, status_code):
+        redirect_base = getattr(settings,"VERIFY_EMAIL_REDIRECT",None)
+        if redirect_base:
+            q = urlencode({"code":code,"message":message})
+            sep = '&' if '?' in redirect_base else '?'
+            return redirect()
 class LoginAPIView(APIView):
     def post(self, request):
         serializer = LoginSerializer(data=request.data, context={'request': request})

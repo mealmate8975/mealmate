@@ -1,3 +1,5 @@
+# BE/accounts/urls.py
+
 from django.urls import path
 from . import views
 from .views import *
@@ -11,6 +13,7 @@ from .views import (
     PasswordChangeAPIView,
     PasswordResetAPIView,
     AccountSoftDeleteAPIView,
+    VerifyEmailAPIView,
     )
 
 app_name = 'accounts'
@@ -29,7 +32,9 @@ urlpatterns = [
 
     path('me/', UserMeAPIView.as_view(), name='me'),
     
-    path('verify-email/<uidb64>/<token>/',?.as_view(),name='verify-email'),
-
-    path('password-reset/<uidb64>/<token>/',?.as_view(),name='password-reset'),
+    # 이메일 인증 엔드포인트 연결
+    path('verify-email/<uidb64>/<token>/',VerifyEmailAPIView.as_view(),name='verify-email'),
+   
+    # 비밀번호 재설정 검증 엔드포인트는 구현 전이므로 일단 주석
+    # path('password-reset/<uidb64>/<token>/',PasswordResetAPIView.as_view(),name='password-reset'),
 ]

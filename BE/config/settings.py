@@ -185,3 +185,5 @@ LOGIN_REDIRECT_URL = '/api/pages/pagelist'  # 또는 로그인 후 이동시키�
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend' # 나중에 SMTP로 바꿀 땐 EMAIL_BACKEND만 교체하고 SMTP 세팅 추가
 DEFAULT_FROM_EMAIL = 'no-reply@mealmate.local'
 PASSWORD_RESET_TIMEOUT = 60 * 60 * 2 # 2시간 , 토큰 만료시간
+
+VERIFY_EMAIL_REDIRECT = "https://my-frontend.example.com/verify/email-result" # 프론트에서는 ?code=verify_success|already_verified|invalid_uid|invalid_or_expired_token와 message를 읽어 UX를 보여주면 됨
