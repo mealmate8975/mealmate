@@ -185,7 +185,7 @@ class AccountService:
     @staticmethod
     def reset_password(email:str,request):
         """
-        비밀번호 초기화
+        비밀번호 재설정
         이메일 기입 시 인증 메일 발송 → 사용자가 메일 링크 클릭 → 백엔드 뷰가 직접 토큰 검증 → 성공 시 비밀번호 재설정 화면으로 이동
         """
         # 1) 사용자 조회 (존재 노출 방지)
@@ -219,7 +219,8 @@ class AccountService:
             # logger.error("URL reverse error", extra=...)
             return {"code": "SEND_FAILED", "reason": "reverse"}         # URL reverse 실패
         except Exception:
-            return {"code": "SEND_FAILED", "reason": "unknown"}         # 기타 예외
+            return {"code": "SEND_FAILED", "reason": "unknown"}     # 기타 예외
+
 class BlockUserService:
     @staticmethod
     def block_user(blocker, blocked_user_id):

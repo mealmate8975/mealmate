@@ -81,7 +81,15 @@ class VerifyEmailAPIView(APIView):
         if redirect_base:
             q = urlencode({"code":code,"message":message})
             sep = '&' if '?' in redirect_base else '?'
-            return redirect()
+            return redirect(f"{redirect_base}{sep}{q}")
+        # 리다이렉트 설정이 없으면 JSON 응답
+        body = (
+            {"message":{"code":code,"message":message}}
+            if status_code < 400
+            else {"error":{"code":code,"message":message}}
+        )
+        return Response(body,status=status_code)
+
 class LoginAPIView(APIView):
     def post(self, request):
         serializer = LoginSerializer(data=request.data, context={'request': request})
@@ -241,9 +249,9 @@ class PasswordChangeAPIView(APIView):
 
         return Response({'message': '비밀번호가 성공적으로 변경되었습니다.'})
 
-class PasswordResetAPIView(APIView):
+class PasswordResetRequestAPIView(APIView):
     """
-    비밀번호 재설정
+    이메일 입력 받고 reset 메일 보내기
     """
     permission_classes = [AllowAny]
 
@@ -263,6 +271,24 @@ class PasswordResetAPIView(APIView):
             "message": "이메일 전송 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
         }
         },status=500)
+
+class PasswordResetConfirmAPIView(APIView):
+    """
+    토큰 검증 후 비밀번호 입력 페이지
+    """
+    permission_classes = [AllowAny]
+
+    def get(self,request):
+        """
+        토큰/UID 검증만 수행
+        """
+        pass
+
+    def post(self,request):
+        """
+        본문으로 new_password1, new_password2를 받고 토큰 재검증 후 비밀번호 변경 → JSON 응답
+        """
+        pass
 
 class AccountSoftDeleteAPIView(APIView):
     def patch(self,request):
