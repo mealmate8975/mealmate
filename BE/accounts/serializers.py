@@ -9,6 +9,23 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    new_password1 = serializers.CharField(write_only=True)
+    new_password2 = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        if attrs["new_password1"] != attrs["new_password2"]:
+            raise serializers.ValidationError("비밀번호가 일치하지 않습니다.")
+        return attrs
+
+    def validate_new_password1(self,value):
+        user = self.context.get("user")
+        try:
+            password_validation.validate_password(value, user = user)
+        except DjangoValidationError as e:
+            raise serializers.ValidationError(e.messages)
+        return value
+ 
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
 
