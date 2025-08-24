@@ -13,6 +13,7 @@ from django.utils.http import urlsafe_base64_decode
 from django.conf import settings
 from urllib.parse import urlencode
 from django.shortcuts import redirect
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
 
 from .serializers import (
     LoginSerializer, 
@@ -275,14 +276,25 @@ class PasswordResetRequestAPIView(APIView):
 class PasswordResetConfirmAPIView(APIView):
     """
     토큰 검증 후 비밀번호 입력 페이지
+    사용자가 이메일로 받은 uidb64와 token을 담은 URL을 클릭 → 백엔드에서 유효한 토큰인지 검증 → 성공 시 “비밀번호 재설정 페이지로 이동(또는 API 호출 준비 완료)” 라는 응답을 주는 것
     """
     permission_classes = [AllowAny]
 
-    def get(self,request):
+    def get(self,request,uidb64,token):
         """
         토큰/UID 검증만 수행
+
+        uidb64 → user 객체 복원 
+        (이메일 링크에 들어있는 uidb64를 디코딩해서 유저 pk를 얻고, 
+        그 pk로 db에서 user 객체를 가져오는 것,
+        예)uidb64 = "NA==" → 디코딩 → "4" (user.pk = 4))
         """
-        pass
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))            
+            user = User.objects.get(pk=uid)
+        except (TypeError,ValueError,OverflowError,User.DoesNotExist):# uidb64가 잘못된 경우: ValueError, TypeError 발생 가능 / 해당 pk의 user가 없을 경우: User.DoesNotExist 발생
+            user = None
+        return user
 
     def post(self,request):
         """
