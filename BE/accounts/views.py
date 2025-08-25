@@ -22,6 +22,7 @@ from .serializers import (
     PasswordChangeSerializer,
     PasswordVerifySerializer,
     PasswordResetRequestSerializer,
+    PasswordResetConfirmSerializer,
 )
 from .accounts_service import AccountService, BlockUserService
 
@@ -301,11 +302,45 @@ class PasswordResetConfirmAPIView(APIView):
 
         return Response({"detail": "Token is valid."}, status=status.HTTP_200_OK)
 
-    def post(self,request):
+    def post(self,request,uidb64,token):
         """
         본문으로 new_password1, new_password2를 받고 토큰 재검증 후 비밀번호 변경 → JSON 응답
         """
-        pass
+        # 유효성 검사 후 비밀번호 재설정
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            return Response({
+                "success": False,
+                "code": "link_invalid",
+                "message": "링크가 유효하지 않습니다."
+                }, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not default_token_generator.check_token(user, token):
+            return Response({
+                "success": False,
+                "code": "token_invalid",
+                "message": "비밀번호 재설정 토큰이 유효하지 않습니다."
+                }, status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer = PasswordResetConfirmSerializer(data=request.data,context={"user":user})
+        if not serializer.is_valid():
+            error_message = next(iter(serializer.errors.values()))[0]
+            return Response({
+                "success" : False,
+                "code" : "validation_error",
+                "message" : error_message
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        new_password = serializer.validated_data['new_password1']
+        user.set_password(new_password)
+        user.save()
+        return Response({
+            "success": True,
+            "code": "token_valid",
+            "message": "비밀번호 재설정을 완료했습니다."
+            },status.HTTP_200_OK)
 
 class AccountSoftDeleteAPIView(APIView):
     def patch(self,request):
