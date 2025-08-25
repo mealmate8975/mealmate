@@ -14,6 +14,7 @@ from django.conf import settings
 from urllib.parse import urlencode
 from django.shortcuts import redirect
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from rest_framework import status
 
 from .serializers import (
     LoginSerializer, 
@@ -290,11 +291,15 @@ class PasswordResetConfirmAPIView(APIView):
         예)uidb64 = "NA==" → 디코딩 → "4" (user.pk = 4))
         """
         try:
-            uid = force_str(urlsafe_base64_decode(uidb64))            
+            uid = force_str(urlsafe_base64_decode(uidb64))
             user = User.objects.get(pk=uid)
-        except (TypeError,ValueError,OverflowError,User.DoesNotExist):# uidb64가 잘못된 경우: ValueError, TypeError 발생 가능 / 해당 pk의 user가 없을 경우: User.DoesNotExist 발생
-            user = None
-        return user
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            return Response({"detail": "Invalid link."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not default_token_generator.check_token(user, token):
+            return Response({"detail": "Invalid link."}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({"detail": "Token is valid."}, status=status.HTTP_200_OK)
 
     def post(self,request):
         """

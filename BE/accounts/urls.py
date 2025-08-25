@@ -20,7 +20,7 @@ urlpatterns = [
     #비밀번호
     path('password-change/',PasswordChangeAPIView.as_view(),name='password-change'), # 비밀번호 변경
     path('password-reset/',PasswordResetRequestAPIView.as_view(),name='password-reset-request'), # 비밀번호 재설정 요청
-    path('password-reset/<uidb64>/<token>/',PasswordResetConfirmAPIView.as_view(),name='password-reset'), # 비밀번호 재설정 검증 엔드포인트
+    path('password-reset/<uidb64>/<token>/',PasswordResetConfirmAPIView.as_view(),name='password-reset-confirm'), # 비밀번호 재설정 검증 엔드포인트
 
     #차단
     path('block/<int:user_id>/', BlockUserView.as_view(), name='block-user'), # 유저 차단
