@@ -22,8 +22,8 @@ from .serializers import (
     PasswordChangeSerializer,
     PasswordVerifySerializer,
     PasswordResetRequestSerializer,
-    PasswordResetConfirmSerializer,
 )
+
 from .accounts_service import AccountService, BlockUserService
 
 User = get_user_model()
@@ -291,56 +291,30 @@ class PasswordResetConfirmAPIView(APIView):
         그 pk로 db에서 user 객체를 가져오는 것,
         예)uidb64 = "NA==" → 디코딩 → "4" (user.pk = 4))
         """
-        try:
-            uid = force_str(urlsafe_base64_decode(uidb64))
-            user = User.objects.get(pk=uid)
-        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-            return Response({"detail": "Invalid link."}, status=status.HTTP_400_BAD_REQUEST)
-
-        if not default_token_generator.check_token(user, token):
-            return Response({"detail": "Invalid link."}, status=status.HTTP_400_BAD_REQUEST)
-
-        return Response({"detail": "Token is valid."}, status=status.HTTP_200_OK)
-
+        success, code, message, status = AccountService.validate_uid_and_token(uidb64,token)
+        return Response({
+                "success": success,
+                "code": code,
+                "message": message
+                }, status=status)
+        
     def post(self,request,uidb64,token):
         """
-        본문으로 new_password1, new_password2를 받고 토큰 재검증 후 비밀번호 변경 → JSON 응답
-        """
-        # 유효성 검사 후 비밀번호 재설정
-        try:
-            uid = force_str(urlsafe_base64_decode(uidb64))
-            user = User.objects.get(pk=uid)
-        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-            return Response({
-                "success": False,
-                "code": "link_invalid",
-                "message": "링크가 유효하지 않습니다."
-                }, status=status.HTTP_400_BAD_REQUEST)
-        
-        if not default_token_generator.check_token(user, token):
-            return Response({
-                "success": False,
-                "code": "token_invalid",
-                "message": "비밀번호 재설정 토큰이 유효하지 않습니다."
-                }, status=status.HTTP_400_BAD_REQUEST)
-        
-        serializer = PasswordResetConfirmSerializer(data=request.data,context={"user":user})
-        if not serializer.is_valid():
-            error_message = next(iter(serializer.errors.values()))[0]
-            return Response({
-                "success" : False,
-                "code" : "validation_error",
-                "message" : error_message
-            }, status=status.HTTP_400_BAD_REQUEST)
+        비밀번호 재설정 요청 처리
 
-        new_password = serializer.validated_data['new_password1']
-        user.set_password(new_password)
-        user.save()
+        이메일 링크로 전달된 UID/token을 통해 사용자 인증을 수행하고,
+        본문으로 전달된 비밀번호 두 필드(new_password1, new_password2)가 유효할 경우,
+        해당 사용자의 비밀번호를 재설정한다.
+
+        Returns:
+            JSON 응답(success, code, message) 및 HTTP 상태 코드
+        """
+        success, code, message, status = AccountService.confirm_reset_password(uidb64,token,request.data)
         return Response({
-            "success": True,
-            "code": "token_valid",
-            "message": "비밀번호 재설정을 완료했습니다."
-            },status.HTTP_200_OK)
+                "success": success,
+                "code": code,
+                "message": message
+                }, status=status)
 
 class AccountSoftDeleteAPIView(APIView):
     def patch(self,request):

@@ -21,6 +21,12 @@ from smtplib import (
     SMTPException,
 )
 from django.urls import NoReverseMatch
+from django.utils.encoding import force_str
+from django.utils.http import urlsafe_base64_decode
+
+from .serializers import (
+    PasswordResetConfirmSerializer,
+) 
 
 from .models import UserBlock
 
@@ -28,6 +34,40 @@ User = get_user_model()
 # logger = logging.getLogger(__name__)
 
 class AccountService:
+    @staticmethod
+    def validate_uid_and_token(uidb64, token):
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+
+        if not user:
+            return None, "INVALID_UID", "유효하지 않은 UID입니다.", 400
+
+        if not default_token_generator.check_token(user, token):
+            return None, "INVALID_TOKEN", "유효하지 않은 토큰입니다.", 400
+
+        return user, "VALID", "유효한 토큰입니다.", 200
+    
+    @staticmethod
+    def confirm_reset_password(uidb64:str,token:str,data) -> tuple[bool,str,str,int]:
+        """
+        유효할 경우 → 비밀번호 저장
+        성공할 경우 저장 후 결과 반환(success, code, message)
+        실패할 경우 → 사유에 따른 코드/메시지 반환
+        """
+        user,code,message,status = AccountService.validate_uid_and_token(uidb64, token)
+        
+        serializer = PasswordResetConfirmSerializer(data=data,context={"user":user})
+        if not serializer.is_valid():
+            success = False,
+            code = "validation_error"
+            message = next(iter(serializer.errors.values()))[0]
+            status = 400
+        new_password = serializer.validated_data['new_password1']
+        user.set_password(new_password)
+        user.save()
+
+        return success, code, message, status
+    
     @staticmethod
     def register(validated_data):
         """
