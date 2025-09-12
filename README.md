@@ -10,5 +10,6 @@
 
 ## 🧱 기술 스택
 - Python 3.10
-- Django 2.2.24, Django REST Framework
+- Django 5.2, Django REST Framework
 - (DB) Postgresql,mongoDB
+- TDD : APITestCase
