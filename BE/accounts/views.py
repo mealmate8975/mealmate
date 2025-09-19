@@ -255,7 +255,7 @@ class PasswordResetConfirmAPIView(APIView):
         그 pk로 db에서 user 객체를 가져오는 것,
         예)uidb64 = "NA==" → 디코딩 → "4" (user.pk = 4))
         """
-        success, code, message, status = AccountService.validate_uid_and_token(uidb64,token)
+        success, code, message, status, _ = AccountService.validate_uid_and_token(uidb64,token)
         return Response({
                 "success": success,
                 "code": code,

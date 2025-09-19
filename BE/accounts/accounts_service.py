@@ -82,37 +82,56 @@ class AccountService:
         
     @staticmethod
     def validate_uid_and_token(uidb64, token):
-        uid = force_str(urlsafe_base64_decode(uidb64))
-        user = User.objects.get(pk=uid)
-
-        if not user:
-            return None, "INVALID_UID", "유효하지 않은 UID입니다.", 400
+        """
+        UID/Token 검증 전용 헬퍼
+        Returns:
+            (success: bool, code: str, message: str, status: int, user: Optional[User])
+        """
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError):
+            return False, "INVALID_UID", "유효하지 않은 UID입니다.", 400, None
+        except User.DoesNotExist:
+            return False, "USER_NOT_FOUND", "해당 사용자를 찾을 수 없습니다.", 404, None
 
         if not default_token_generator.check_token(user, token):
-            return None, "INVALID_TOKEN", "유효하지 않은 토큰입니다.", 400
+            return False, "INVALID_TOKEN", "유효하지 않은 토큰 또는 만료된 토큰입니다.", 400, None
 
-        return user, "VALID", "유효한 토큰입니다.", 200
+        return True, "VALID", "유효한 토큰입니다.", 200, user
     
     @staticmethod
     def confirm_reset_password(uidb64:str,token:str,data) -> tuple[bool,str,str,int]:
         """
-        유효할 경우 → 비밀번호 저장
-        성공할 경우 저장 후 결과 반환(success, code, message)
-        실패할 경우 → 사유에 따른 코드/메시지 반환
+        비밀번호 재설정 로직
+        Returns: (success, code, message, http_status)
         """
-        user,code,message,status = AccountService.validate_uid_and_token(uidb64, token)
-        
+        # 1) UID/토큰 검증 (실패 시 즉시 반환)
+        success,code,message,status,user = AccountService.validate_uid_and_token(uidb64, token)
+        if not success:
+            return False, code, message, status
+
+        # 2) 시리얼라이저 검증 (실패 시 즉시 반환)
         serializer = PasswordResetConfirmSerializer(data=data,context={"user":user})
         if not serializer.is_valid():
-            success = False,
-            code = "validation_error"
-            message = next(iter(serializer.errors.values()))[0]
-            status = 400
+            # 에러 메시지 안전 추출
+            # errors는 {"new_password2": ["두 비밀번호는 일치하지 않습니다."]} 형태가 일반적
+            first_key = next(iter(serializer.errors))
+            first_error = serializer.errors[first_key]
+            # first_error가 리스트/문자열인 경우를 커버
+            if isinstance(first_error, (list,tuple)) and first_error:
+                message_text = str(first_error[0])
+            else:
+                message_text = str(first_error)
+            
+            return False, "validation_error", message_text, 400
+
+        # 3) 성공 시에만 저장
         new_password = serializer.validated_data['new_password1']
         user.set_password(new_password)
-        user.save()
+        user.save(update_fields=["password"])
 
-        return success, code, message, status
+        return True, "password_reset_success", "비밀번호가 재설정되었습니다.", 200
     
     @staticmethod
     def register(validated_data):
