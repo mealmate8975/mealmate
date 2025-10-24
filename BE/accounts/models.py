@@ -1,6 +1,7 @@
+# BE/accounts/models.py
+
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.db import models
-
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -13,8 +14,6 @@ class CustomUserManager(BaseUserManager):
         user.set_password(password) # 비밀번호 해시(hash)화
         user.save(using = self._db) # 연결된 db에 저장(_db)
         return user
-
-
 
 class CustomUser(AbstractBaseUser):
     objects = CustomUserManager() # 유저 생성이랑 연결
@@ -30,6 +29,10 @@ class CustomUser(AbstractBaseUser):
     gender = models.CharField(choices=GENDER_CHOICES, max_length=1)
     nickname = models.CharField(max_length=50, unique= True)
     phone = models.CharField(max_length=50, blank=True, null=True)
+    profile_image = models.ImageField(upload_to="profile_images/",blank=True,null=True,default="profile_images/default.jpeg")
+    is_active = models.BooleanField(default=True)
+    withdrawn_at = models.DateTimeField(blank=True, null=True)
+    email_verified = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'email' # 이메일로 로그인
     REQUIRED_FIELDS = ['name']

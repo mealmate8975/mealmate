@@ -1,120 +1,385 @@
-from .serializers import LoginSerializer, RegisterSerializer
+# BE/accounts/views.py
+
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.shortcuts import render
-from .models import UserBlock
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import get_user_model
-from .models import CustomUser
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
-from django.views import View
-from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import MyTokenObtainPairSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import IsAdminUser
+from django.db import transaction
+from rest_framework.permissions import AllowAny
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.encoding import force_str
+from django.utils.http import urlsafe_base64_decode
+from django.conf import settings
+
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from rest_framework import status
+
+from .serializers import (
+    LoginSerializer, 
+    RegisterSerializer, 
+    PasswordChangeSerializer,
+    PasswordVerifySerializer,
+    PasswordResetRequestSerializer,
+)
+
+from .accounts_service import AccountService, BlockUserService
 
 User = get_user_model()
 
-
-class MyTokenObtainPairView(TokenObtainPairView):
-    serializer_class = MyTokenObtainPairSerializer
-
-class UserMeView(APIView):
-    permission_classes = [IsAuthenticated]  # JWT 토큰 필요
-
-    def get(self, request):
-        user = request.user  # JWT 토큰에서 복원된 유저
-        return Response({
-            "email": user.email,
-            "nickname": user.nickname,
-            "name": user.name,
-        })
-
-class LoginPageView(View):
-    def get(self, request):
-        return render(request, 'login.html')
-
-@method_decorator(csrf_exempt, name='dispatch')
-class LoginAPIView(APIView):
-    def post(self, request):
-        print("request.data:", request.data)
-        # print("request.body:", request.body)
-        
-        serializer = LoginSerializer(data=request.data, context={'request': request})
-        if serializer.is_valid():
-            user = serializer.validated_data['user']
-            return Response({"message": "로그인 성공", "nickname": user.nickname}, status=200)
-        print("serializer.errors:", serializer.errors)
-        return Response(serializer.errors, status=400)
-    
-class RegisterView(APIView):
-    def get(self, request):
-        # 회원가입 페이지를 렌더링
-        return render(request, 'register.html')
+class RegisterAPIView(APIView):
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
-            user = CustomUser.objects.create_user(
-                email = serializer.validated_data['email'],
-                name = serializer.validated_data['name'],
-                password = serializer.validated_data['password'],
-                phone = serializer.validated_data['phone'],
-                nickname = serializer.validated_data['nickname']
+            validated_data = serializer.validated_data
+            user = AccountService.register(validated_data)
+            # 트랜잭션 커밋 후 이메일 발송
+            transaction.on_commit(
+                lambda: AccountService.send_verification_email(user, request)
             )
+            return Response({"message": "회원가입 성공",},status=201)
+        error_message = next(iter(serializer.errors.values()))[0]
+        return Response({
+            "error": {
+                "code": "invalid_registration",
+                "message": error_message
+            }
+        }, status=400)
+
+class VerifyEmailAPIView(APIView):
+    """
+    이메일 인증: 메일 링크 클릭 시 토큰/UID 검증 후 email_verified를 갱신.
+    - settings.VERIFY_EMAIL_REDIRECT 가 설정되어 있으면, 해당 URL로 결과를 쿼리스트링으로 리다이렉트
+    - 없으면 JSON 응답
+    """
+    permission_classes = [AllowAny]
+
+    def get(self,request,uidb64,token):
+        return AccountService.verify_email(request,uidb64, token)
+
+class LoginAPIView(APIView):
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            user = serializer.validated_data['user']
+
+            if not user.is_active:
+                success,reason = AccountService.activate_account(user)
+                if not success:
+                    return Response({
+                        "error": {
+                            "code": "activation_failed",
+                            "message": "계정 활성화에 실패했습니다."
+                        }
+                    }, status=500)
+            
+
+            refresh = RefreshToken.for_user(user)
             return Response({
-                "message": "회원가입 성공", 'USER_ID': user.email
-            }, status=201)
-        return Response(serializer.errors, status=400)
-
-class BlockUserService:
-    @staticmethod
-    def block_user(blocker, blocked_user_id):
-        """
-        유저 차단을 처리합니다.
-        """
-        try:
-            blocked_user = User.objects.get(id=blocked_user_id)
-
-            if blocker == blocked_user:
-                return {"error": "자기 자신을 차단할 수 없습니다."}, 400
-            
-            if UserBlock.objects.filter(blocker=blocker, blocked_user=blocked_user).exists():
-                return {"error": "이미 차단된 유저입니다."}, 400
-            
-            UserBlock.objects.create(blocker=blocker, blocked_user=blocked_user)
-            return {"message": "유저가 차단되었습니다."}, 200
-            
-        except User.DoesNotExist:
-            return {"error": "존재하지 않는 유저는 차단할 수 없습니다."}, 404
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+                "reason": reason,
+                "user": {
+                    "id": user.id,
+                    "email": user.email,
+                    "nickname": user.nickname,
+                    "name": user.name,
+                    "gender": user.gender,
+                    "phone": user.phone
+                }
+            }, status=200)
+        
+        error_message = serializer.errors.get('non_field_errors', ["로그인 실패"])[0]
+        return Response({
+            "error": {
+                "code": "invalid_credentials",
+                "message": error_message
+            }
+            }, status=400)
     
-    @staticmethod
-    def unblock_user(blocker, blocked_user_id):
+class DeleteSoftDeletedAccountsAPIView(APIView):
+    """
+    삭제 유예 기간이 끝난 유저 삭제
+    """
+    permission_classes = [IsAdminUser]
+    def get(self,request):
+        result = AccountService.delete_soft_deleted_accounts()
+        if result["status"] == "error":
+            return Response({
+                "error": {
+                    "code": "deletion_failed",
+                    "message": "유저 삭제 중 서버 오류가 발생했습니다."
+                }
+            }, status=500)
+
+        if result["deleted_count"] == 0:
+            return Response({
+                "error": {
+                    "code": "no_deletion_needed",
+                    "message": "삭제할 유저가 없습니다."
+                }
+            }, status=200)
+
+        return Response({
+            "message": {
+                "code": "deletion_success",
+                "message": f"{result['deleted_count']}명의 유저 삭제 완료"
+            }
+        }, status=200)
+
+class VerifyPasswordAPIView(APIView):
+    def post(self,request):
+        serializer = PasswordVerifySerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            return Response({
+            "message": {
+                "code": "password_verified",
+                "message": "비밀번호가 일치합니다."
+            }
+            }, status=200) # 클라이언트는 이 응답을 받으면 “비밀번호 인증 통과” 상태라고 간주하고, 다음 요청에 X-Password-Verified: true 헤더를 추가
+        error = serializer.errors.get('password', [None])[0]
+        error_message = str(error)
+        error_code = getattr(error, 'code', 'invalid_request')
+
+        if error_code == "incorrect_password":
+            status_code = 403
+        elif error_code == "required":
+            status_code = 400
+        else:
+            status_code = 400
+
+        return Response({
+            "error": {
+                "code": error_code,
+                "message": error_message
+            }
+        }, status=status_code)
+
+class UserMeAPIView(APIView):
+    """
+    개인정보 확인과 수정
+    """
+    def get(self, request):
+        user = request.user
+        return Response({
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "nickname": user.nickname,
+                "name": user.name,
+                "gender": user.gender,
+                "phone": user.phone
+            }
+        })
+    
+    def patch(self,request):
+        # 비밀번호 확인이 앞서 이루어졌는지 확인(프로토타입용 임시)
+        if request.headers.get("X-Password-Verified") != "true":
+            return Response({
+                "error":{
+                    "code" : "password_verification_required",
+                    "message" : "비밀번호 확인이 필요합니다."
+                }
+            },status=403)
+        
+        data = request.data
+        user = request.user
+        error_msg,status_code = AccountService.patch_my_info(user,data)
+        if error_msg is None:
+            return Response({
+            "user" :{
+                "id" : user.id,
+                "email": user.email,
+                "nickname": user.nickname,
+                "name": user.name,
+                "gender": user.gender,
+                "phone": user.phone
+            }
+        }, status=200)
+        return Response({
+            "error": {
+                "code": "update_failed",
+                "message": error_msg
+            }
+        }, status=status_code)
+    
+class PasswordChangeAPIView(APIView):
+    """
+    비빌번호 변경
+    """
+    def patch(self, request):
+        serializer = PasswordChangeSerializer(data=request.data,context={'request':request})
+        serializer.is_valid(raise_exception=True)
+
+        request.user.set_password(serializer.validated_data['new_password'])
+        request.user.save()
+
+        return Response({'message': '비밀번호가 성공적으로 변경되었습니다.'})
+
+class PasswordResetRequestAPIView(APIView):
+    """
+    이메일 입력 받고 reset 메일 보내기
+    """
+    permission_classes = [AllowAny]
+
+    def post(self,request):
+        serializer =  PasswordResetRequestSerializer(data = request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_email = serializer.validated_data["email"]
+        data = AccountService.reset_password(validated_email,request)
+        if data["code"] == "NOT_FOUND_NOOP" or data["code"] == "FOUND_SENT":
+            return Response({"message": {
+                "code": "password_reset_email_sent",
+                "message": "비밀번호 재설정 안내를 이메일로 전송했습니다."
+            }},status=200)
+        return Response({
+        "error": {
+            "code": "password_reset_send_failed",
+            "message": "이메일 전송 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
+        }
+        },status=500)
+
+class PasswordResetConfirmAPIView(APIView):
+    """
+    토큰 검증 후 비밀번호 입력 페이지
+    사용자가 이메일로 받은 uidb64와 token을 담은 URL을 클릭 → 백엔드에서 유효한 토큰인지 검증 → 성공 시 “비밀번호 재설정 페이지로 이동(또는 API 호출 준비 완료)” 라는 응답을 주는 것
+    """
+    permission_classes = [AllowAny]
+
+    def get(self,request,uidb64,token):
         """
-        유저 차단 해제를 처리합니다.
+        토큰/UID 검증만 수행
+
+        uidb64 → user 객체 복원 
+        (이메일 링크에 들어있는 uidb64를 디코딩해서 유저 pk를 얻고, 
+        그 pk로 db에서 user 객체를 가져오는 것,
+        예)uidb64 = "NA==" → 디코딩 → "4" (user.pk = 4))
         """
-        try:
-            blocked_user = User.objects.get(id=blocked_user_id)
+        success, code, message, status, _ = AccountService.validate_uid_and_token(uidb64,token)
+        return Response({
+                "success": success,
+                "code": code,
+                "message": message
+                }, status=status)
+        
+    def post(self,request,uidb64,token):
+        """
+        비밀번호 재설정 요청 처리
 
-            if blocker == blocked_user:
-                return {"error": "자기 자신을 차단해제할 수 없습니다."}, 400
+        이메일 링크로 전달된 UID/token을 통해 사용자 인증을 수행하고,
+        본문으로 전달된 비밀번호 두 필드(new_password1, new_password2)가 유효할 경우,
+        해당 사용자의 비밀번호를 재설정한다.
 
-            if not UserBlock.objects.filter(blocker=blocker, blocked_user=blocked_user).exists():
-                return {"error": "해제할 차단이 존재하지 않습니다."}, 404
+        Returns:
+            JSON 응답(success, code, message) 및 HTTP 상태 코드
+        """
+        success, code, message, status = AccountService.confirm_reset_password(uidb64,token,request.data)
+        return Response({
+                "success": success,
+                "code": code,
+                "message": message
+                }, status=status)
 
-            UserBlock.objects.filter(blocker=blocker, blocked_user=blocked_user).delete()
-            return {"message": "유저 차단이 해제되었습니다."}, 200
-        except:
-            return {"error": "존재하지 않는 유저는 차단해제할 수 없습니다."}, 404
-# 차단
+class AccountSoftDeleteAPIView(APIView):
+    def patch(self,request):
+        # 비밀번호 확인이 앞서 이루어졌는지 확인(임시)
+        if request.headers.get("X-Password-Verified") != "true":
+            return Response({
+                "error":{
+                    "code" : "password_verification_required",
+                    "message" : "비밀번호 확인이 필요합니다."
+                }
+            },status=403)
+        success,error_msg = AccountService.account_soft_delete(request.user)
+        if success:
+            return Response({
+                "message": {
+                    "code": "account_soft_deleted",
+                    "message": "계정이 성공적으로 비활성화되었습니다."
+                }
+            }, status=200)
+        return Response({
+            "error": {
+                "code": "soft_delete_failed",
+                "message": error_msg
+            }
+        }, status=400)
+    
 class BlockUserView(APIView):
-    permission_classes = [IsAuthenticated]
-
+    """
+    유저 차단
+    """
     def post(self, request, user_id):
-        return Response(*BlockUserService.block_user(request.user, user_id))
-# 차단 해제
-class UnblockUserView(APIView):
-    permission_classes = [IsAuthenticated]
+        data, status_code = BlockUserService.block_user(request.user, user_id)
 
+        if status_code >= 400:
+            return Response(data, status=status_code)
+
+        return Response({
+            "message": {
+                "code": "block_success",
+                "message": data["message"]
+            }
+        }, status=status_code)
+
+class UnblockUserView(APIView):
+    """
+    유저 차단 해제
+    """
     def delete(self, request, user_id):
-        return Response(*BlockUserService.unblock_user(request.user, user_id))
+        data, status_code = BlockUserService.unblock_user(request.user, user_id)
+        
+        if status_code >= 400:
+            return Response({
+                "error": {
+                    "code": "unblock_failed",
+                    "message": data.get("error", "차단 해제 중 오류가 발생했습니다.")
+                }
+            }, status=status_code)
+
+        return Response({
+            "message": {
+                "code": "unblock_success",
+                "message": data["message"]
+            }
+        }, status=status_code)
+
+class GetBlockedUserView(APIView):
+    """
+    차단한 유저 목록 가져오기
+    """
+    def get(self, request):
+        data, status_code = BlockUserService.get_blocked_user(request.user)
+
+        if status_code >= 400:
+            return Response(data, status=status_code)
+
+        return Response(data, status=200)
+
+# from .serializers import MyTokenObtainPairSerializer
+
+# class RegisterView(APIView):
+#     def get(self, request):
+#         # 회원가입 페이지를 렌더링
+#         return render(request, 'register.html')
+#     def post(self, request):
+#         serializer = RegisterSerializer(data=request.data)
+#         if serializer.is_valid():
+#             user = User.objects.create_user(
+#                 email = serializer.validated_data['email'],
+#                 name = serializer.validated_data['name'],
+#                 password = serializer.validated_data['password'],
+#                 phone = serializer.validated_data['phone'],
+#                 nickname = serializer.validated_data['nickname']
+#             )
+#             return Response({
+#                 "message": "회원가입 성공", 'USER_ID': user.email
+#             }, status=201)
+#         return Response(serializer.errors, status=400)
+
+# class LoginPageView(View):
+#     def get(self, request):
+#         return render(request, 'login.html')
+
+# class MyTokenObtainPairView(TokenObtainPairView):
+#     serializer_class = MyTokenObtainPairSerializer
