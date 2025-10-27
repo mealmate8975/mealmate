@@ -46,13 +46,21 @@ class ScheduleQueryService:
 
     @staticmethod
     def get_schedule(pk, user):
+        '''
+
+        '''
         schedule = get_object_or_404(Schedules, pk=pk, created_by=user)
         return ScheduleSerializer(schedule).data   
 
     # participant = host + guest
     # (호스트의 id + 게스트들의 id) 추출
     @staticmethod
-    def get_participant_user_ids(pk,user): # 해당 스케줄의 pk와 request.user(생성자이자 호스트)를 통해 스케줄 호스트와 게스트들의 id를 찾아서 리턴하는 함수
+    def get_participant_user_ids(pk,user): 
+        '''
+        해당 스케줄의 pk와 
+        request.user(생성자이자 호스트)를 통해 
+        스케줄 호스트와 게스트들의 id를 찾아서 리턴하는 함수
+        '''
         target_schedule = get_object_or_404(Schedules,pk=pk)
 
         if user.id != target_schedule.created_by.id: # user.id가 pk로 찾은 스케줄의 생성자 id와 일치하는지 확인하는 로직
@@ -65,6 +73,9 @@ class ScheduleQueryService:
 
     @staticmethod
     def get_related_schedule_ids_by_user_ids(pk, user):
+        '''
+
+        '''
         participant_id_list = ScheduleQueryService.get_participant_user_ids(pk, user)
 
         # 스케줄 참여자로 스케줄 찾기
@@ -84,9 +95,11 @@ class ScheduleQueryService:
 
         return combined_schedule_ids
 
-    # 스케줄 id로 스케줄 테이블에서 해당하는 달에 속해있는 약속들 찾기
     @staticmethod
-    def get_schedules_in_month_range(pk, user,new_schedule_start,new_schedule_end):        
+    def get_schedules_in_month_range(pk, user,new_schedule_start,new_schedule_end):
+        '''
+        스케줄 id로 스케줄 테이블에서 해당하는 달에 속해있는 약속들 찾기
+        '''        
         related_schedule_id_set = ScheduleQueryService.get_related_schedule_ids_by_user_ids(pk,user)
 
         new_schedule_start_month = new_schedule_start.month
