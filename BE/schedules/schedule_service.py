@@ -119,10 +119,8 @@ class ScheduleTimeService:
         new_schedule_start = serializer.validated_data["schedule_start"]
         new_schedule_end = serializer.validated_data["schedule_end"]
 
-        # 기존 약속과 충돌하는 새로운 약속일 경우 에러 발생시키기
-
-        # if ?.filter(schedule_end__gte=new_schedule_start,schedule_start__lte=new_schedule_end).exists():
-        #     raise ValidationError("기존 약속과 충돌하는 새로운 약속입니다.")
+        if Schedule?Service.겹치는약속찾기(new_schedule_start,new_schedule_end): # 겹치는 약속이 있을 경우 True
+            raise ValidationError("기존 약속과 충돌하는 시간대입니다.")
 
         data = {
             "schedule_start": new_schedule_start,
