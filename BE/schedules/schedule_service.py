@@ -96,7 +96,7 @@ class ScheduleQueryService:
         return combined_schedule_ids
 
     @staticmethod
-    def get_schedules_in_range(schedule_pk, user,new_schedule_start,new_schedule_end):
+    def get_conflicting_appointments(schedule_pk, user,new_schedule_start,new_schedule_end):
         '''
         새로운 스케줄과 겹치는 모든 스케줄을 찾는 메서드
         '''        
@@ -109,17 +109,20 @@ class ScheduleQueryService:
 
 class ScheduleTimeService:
     @staticmethod
-    def select_available_time(schedule_pk,host,new_schedule_start,new_schedule_end):
+    def update_schedule_time_if_available(schedule_pk,host,new_schedule_start,new_schedule_end):
         '''
-        모두가 가능한 시간대 고르기
+         1.세팅할 시작/종료 시간 유효성 검증
+         2.겹치는 약속이 있는지 검사
         '''
+        # 1.세팅할 시작/종료 시간 유효성 검증
         serializer = ScheduleSerializer(data={"schedule_start": new_schedule_start, "schedule_end": new_schedule_end}, partial=True)
         serializer.is_valid(raise_exception=True)
 
         new_schedule_start = serializer.validated_data["schedule_start"]
         new_schedule_end = serializer.validated_data["schedule_end"]
 
-        if Schedule?Service.겹치는약속찾기(new_schedule_start,new_schedule_end): # 겹치는 약속이 있을 경우 True
+        # 2.겹치는 약속이 있는지 검사
+        if ScheduleQueryService.충돌하는약속을찾는메서드(new_schedule_start,new_schedule_end): # 겹치는 약속이 있을 경우 True
             raise ValidationError("기존 약속과 충돌하는 시간대입니다.")
 
         data = {
