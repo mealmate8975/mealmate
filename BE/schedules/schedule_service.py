@@ -53,7 +53,7 @@ class ScheduleQueryService:
         return ScheduleSerializer(schedule).data   
 
     @staticmethod
-    def get_participant_user_ids(schedule_pk,user): 
+    def get_participant_user_ids(schedule_id,user): 
         '''
         해당 스케줄의 pk와 
         request.user를 통해 
@@ -61,7 +61,7 @@ class ScheduleQueryService:
 
         participant = host + guest
         '''
-        target_schedule = get_object_or_404(Schedules,pk=schedule_pk)
+        target_schedule = get_object_or_404(Schedules,pk=schedule_id)
 
         if user.id != target_schedule.created_by.id: # user.id가 pk로 찾은 스케줄의 생성자 id와 일치하는지 확인
             raise PermissionDenied("해당 스케줄에 대한 권한이 없습니다.")
@@ -71,38 +71,40 @@ class ScheduleQueryService:
 
         return participant_id_list
 
+    # @staticmethod
+    # def get_related_schedule_ids_by_user_ids(pk, user):
+    #     '''
+
+    #     '''
+    #     participant_id_list = ScheduleQueryService.get_participant_user_ids(pk, user)
+
+    #     # 스케줄 참여자로 스케줄 찾기
+    #     # (호스트의 id + 게스트들의 id)로 participants 테이블에서 스케줄 id 추출(중복제거)
+    #     schedule_id_queryset_from_Participants = Participants.objects.filter(
+    #         participant__in=participant_id_list
+    #     ).values_list("schedule", flat=True).distinct()
+
+    #     # 스케줄 생성자로 스케줄 찾기
+    #     # (호스트의 id + 게스트들의 id)로 schedules 테이블에서 생성자로 스케줄 id 추출
+    #     schedule_id_queryset_from_Schedules = Schedules.objects.filter(
+    #         created_by__in=participant_id_list
+    #     ).values_list("schedule_id", flat=True).distinct()
+
+    #     combined_schedule_ids = set(chain(schedule_id_queryset_from_Participants, schedule_id_queryset_from_Schedules))
+    #     # itertools.chain 객체이며, 단순한 lazy iterator
+
+    #     return combined_schedule_ids
+
     @staticmethod
-    def get_related_schedule_ids_by_user_ids(pk, user):
-        '''
-
-        '''
-        participant_id_list = ScheduleQueryService.get_participant_user_ids(pk, user)
-
-        # 스케줄 참여자로 스케줄 찾기
-        # (호스트의 id + 게스트들의 id)로 participants 테이블에서 스케줄 id 추출(중복제거)
-        schedule_id_queryset_from_Participants = Participants.objects.filter(
-            participant__in=participant_id_list
-        ).values_list("schedule", flat=True).distinct()
-
-        # 스케줄 생성자로 스케줄 찾기
-        # (호스트의 id + 게스트들의 id)로 schedules 테이블에서 생성자로 스케줄 id 추출
-        schedule_id_queryset_from_Schedules = Schedules.objects.filter(
-            created_by__in=participant_id_list
-        ).values_list("schedule_id", flat=True).distinct()
-
-        combined_schedule_ids = set(chain(schedule_id_queryset_from_Participants, schedule_id_queryset_from_Schedules))
-        # itertools.chain 객체이며, 단순한 lazy iterator
-
-        return combined_schedule_ids
-
-    @staticmethod
-    def check_conflicting_schedule(schedule_pk,new_schedule_start,new_schedule_end,host):
+    def check_conflicting_schedule(schedule_id,new_schedule_start,new_schedule_end,host):
         '''
         새로운 스케줄과 겹치는 스케줄이 있는지 확인하는 메서드
         '''
-        # 1. schedule_pk로 약속의 참가자 모두 찾기
-        # 2. 호스트 + 참가자 로 관련된 약속 모두 찾기
+        # 1. schedule_id로 약속의 참가자 모두 찾기
+        participant_id_list = ScheduleQueryService.get_participant_user_ids(schedule_id,host)
 
+        # 2. 호스트 + 참가자 로 관련된 약속 모두 찾기
+        
         # related_schedule_id_set = ScheduleQueryService.get_related_schedule_ids_by_user_ids(schedule_pk)
 
         if True:
@@ -112,7 +114,7 @@ class ScheduleQueryService:
 
 class ScheduleTimeService:
     @staticmethod
-    def update_schedule_time_if_available(schedule_pk,new_schedule_start,new_schedule_end,host):
+    def update_schedule_time_if_available(schedule_id,new_schedule_start,new_schedule_end,host):
         '''
          1. 새로 설정할 시작/종료 시간의 유효성 검증
          2. 새로운 약속 시간과 겹치는 기존 약속이 있는지 검사
@@ -125,7 +127,7 @@ class ScheduleTimeService:
         new_schedule_end = serializer.validated_data["schedule_end"]
 
         # 2. 새로운 약속 시간과 겹치는 기존 약속이 있는지 검사
-        if ScheduleQueryService.check_conflicting_schedule(schedule_pk,new_schedule_start,new_schedule_end,host): # 겹치는 약속이 있을 경우 True
+        if ScheduleQueryService.check_conflicting_schedule(schedule_id,new_schedule_start,new_schedule_end,host): # 겹치는 약속이 있을 경우 True
             raise ValidationError("기존 약속과 충돌하는 시간대입니다.")
 
         data = {
@@ -133,4 +135,4 @@ class ScheduleTimeService:
             "schedule_end": new_schedule_end,
         }
 
-        return ScheduleCommandService.update_schedule(schedule_pk, host, data)
+        return ScheduleCommandService.update_schedule(schedule_id, host, data)
