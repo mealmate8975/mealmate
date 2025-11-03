@@ -25,8 +25,8 @@ class ScheduleCommandService:
         serializer.save(created_by=user)
         return serializer.data
     @staticmethod
-    def update_schedule(pk, user, data):
-        schedule = get_object_or_404(Schedules, pk=pk, created_by=user)
+    def update_schedule(schedule_id, user, data):
+        schedule = get_object_or_404(Schedules, schedule_id=schedule_id, created_by=user)
         serializer = ScheduleSerializer(schedule, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -53,7 +53,7 @@ class ScheduleQueryService:
         return ScheduleSerializer(schedule).data   
 
     @staticmethod
-    def get_participant_user_ids(schedule_id,user): 
+    def get_participant_user_ids(schedule_id): 
         '''
         해당 스케줄의 pk와 
         request.user를 통해 
@@ -101,7 +101,7 @@ class ScheduleQueryService:
         새로운 스케줄과 겹치는 스케줄이 있는지 확인하는 메서드
         '''
         # 1. schedule_id로 약속의 참가자 모두 찾기
-        participant_id_list = ScheduleQueryService.get_participant_user_ids(schedule_id,host)
+        participant_id_list = ScheduleQueryService.get_participant_user_ids(schedule_id)
 
         # 2. 호스트 + 참가자 로 관련된 약속 모두 찾기
         
@@ -114,11 +114,15 @@ class ScheduleQueryService:
 
 class ScheduleTimeService:
     @staticmethod
-    def update_schedule_time_if_available(schedule_id,new_schedule_start,new_schedule_end,host):
+    def update_schedule_time_if_available(user,schedule_id,new_schedule_start,new_schedule_end):
         '''
+         0. 요청하는 사용자가 호스트인지 확인
          1. 새로 설정할 시작/종료 시간의 유효성 검증
          2. 새로운 약속 시간과 겹치는 기존 약속이 있는지 검사
         '''
+        # 0. 요청하는 사용자가 호스트인지 확인
+        if user == .schedule_id
+
         # 1. 새로 설정할 시작/종료 시간의 유효성 검증
         serializer = ScheduleSerializer(data={"schedule_start": new_schedule_start, "schedule_end": new_schedule_end}, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -127,7 +131,7 @@ class ScheduleTimeService:
         new_schedule_end = serializer.validated_data["schedule_end"]
 
         # 2. 새로운 약속 시간과 겹치는 기존 약속이 있는지 검사
-        if ScheduleQueryService.check_conflicting_schedule(schedule_id,new_schedule_start,new_schedule_end,host): # 겹치는 약속이 있을 경우 True
+        if ScheduleQueryService.check_conflicting_schedule(schedule_id,new_schedule_start,new_schedule_end): # 겹치는 약속이 있을 경우 True
             raise ValidationError("기존 약속과 충돌하는 시간대입니다.")
 
         data = {
@@ -135,4 +139,4 @@ class ScheduleTimeService:
             "schedule_end": new_schedule_end,
         }
 
-        return ScheduleCommandService.update_schedule(schedule_id, host, data)
+        return ScheduleCommandService.update_schedule(schedule_id, data)

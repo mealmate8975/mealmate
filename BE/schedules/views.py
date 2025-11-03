@@ -59,23 +59,23 @@ class ScheduleDetailView(APIView):
 class ScheduleAvailableTimesView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, pk):
-        start = request.query_params.get("start")
-        end = request.query_params.get("end")
+    def get(self, request):
+        new_schedule_start = request.query_params.get("start")
+        new_schedule_end = request.query_params.get("end")
 
-        start_dt = parse_datetime(start)
-        end_dt = parse_datetime(end)
+        new_schedule_start = parse_datetime(new_schedule_start)
+        new_schedule_end = parse_datetime(new_schedule_end)
 
-        schedules = ScheduleQueryService.get_schedules_in_month_range(pk, request.user, start_dt, end_dt)
+        schedules = ScheduleQueryService.update_schedule_time_if_available(request.user,new_schedule_start,new_schedule_end)
 
         response_data = [
             {
-                "schedule_id": s.schedule_id,
-                "name": s.schedule_name,
-                "start": s.schedule_start.isoformat(),
-                "end": s.schedule_end.isoformat(),
+                "schedule_id": schedule.schedule_id,
+                "name": schedule.schedule_name,
+                "start": schedule.schedule_start.isoformat(),
+                "end": schedule.schedule_end.isoformat(),
             }
-            for s in schedules
+            for schedule in schedules
         ]
         return Response({"schedules": response_data})
 
