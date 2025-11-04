@@ -24,6 +24,7 @@ class ScheduleCommandService:
         serializer.is_valid(raise_exception=True)
         serializer.save(created_by=user)
         return serializer.data
+
     @staticmethod
     def update_schedule(schedule_id, user, data):
         schedule = get_object_or_404(Schedules, schedule_id=schedule_id, created_by=user)
@@ -31,6 +32,7 @@ class ScheduleCommandService:
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return serializer.data
+
     @staticmethod
     def delete_schedule(pk, user):
         schedule = get_object_or_404(Schedules, pk=pk, created_by=user)
@@ -114,14 +116,16 @@ class ScheduleQueryService:
 
 class ScheduleTimeService:
     @staticmethod
-    def update_schedule_time_if_available(user,schedule_id,new_schedule_start,new_schedule_end):
+    def update_schedule_time_if_available(schedule_id,user,new_schedule_start,new_schedule_end):
         '''
          0. 요청하는 사용자가 호스트인지 확인
          1. 새로 설정할 시작/종료 시간의 유효성 검증
          2. 새로운 약속 시간과 겹치는 기존 약속이 있는지 검사
         '''
         # 0. 요청하는 사용자가 호스트인지 확인
-        if user == .schedule_id
+        target_schedule = get_object_or_404(Schedules,schedule_id= schedule_id)
+        if user != target_schedule.created_by:
+            raise PermissionDenied("해당 약속의 호스트만 시간을 수정할 수 있습니다.")
 
         # 1. 새로 설정할 시작/종료 시간의 유효성 검증
         serializer = ScheduleSerializer(data={"schedule_start": new_schedule_start, "schedule_end": new_schedule_end}, partial=True)
@@ -139,4 +143,4 @@ class ScheduleTimeService:
             "schedule_end": new_schedule_end,
         }
 
-        return ScheduleCommandService.update_schedule(schedule_id, data)
+        return ScheduleCommandService.update_schedule(schedule_id,user,data)
