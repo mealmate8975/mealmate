@@ -5,7 +5,7 @@ from accounts.models import CustomUser
 class Schedules(models.Model):
     schedule_id = models.AutoField(primary_key=True)
     rest_id = models.ForeignKey(Restaurant,null=True,on_delete=models.DO_NOTHING)
-    created_by = models.ForeignKey(CustomUser,on_delete=models.DO_NOTHING)
+    # created_by = models.ForeignKey(CustomUser,on_delete=models.DO_NOTHING) # Participant 테이블의 is_host 필드 추가로 불필요해짐
 
     schedule_name = models.CharField(null=True,max_length=100,blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
