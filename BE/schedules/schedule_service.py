@@ -55,21 +55,21 @@ class ScheduleQueryService:
         return ScheduleSerializer(schedule).data   
 
     @staticmethod
-    def get_participant_user_ids(schedule_id): 
+    def get_participant_user_ids(schedule_id,host): 
         '''
-        해당 스케줄의 pk와 
-        request.user를 통해 
-        스케줄 호스트와 게스트들의 id를 찾아서 리턴하는 함수
+        해당 스케줄의 schedule_id와 
+        host를 통해 
+        스케줄 호스트와 게스트들의 id를 리턴하는 함수
 
         participant = host + guest
         '''
         target_schedule = get_object_or_404(Schedules,pk=schedule_id)
 
-        if user.id != target_schedule.created_by.id: # user.id가 pk로 찾은 스케줄의 생성자 id와 일치하는지 확인
+        if host.id != target_schedule.created_by.id: # host.id가 pk로 찾은 스케줄의 생성자 id와 일치하는지 확인
             raise PermissionDenied("해당 스케줄에 대한 권한이 없습니다.")
 
         guest_id_list = list(Participants.objects.filter(schedule=target_schedule).values_list("participant_id", flat=True).distinct())
-        participant_id_list = guest_id_list + [user.id]
+        participant_id_list = guest_id_list + [host.id]
 
         return participant_id_list
 
