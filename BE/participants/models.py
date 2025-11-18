@@ -2,7 +2,6 @@ from django.db import models
 from django.conf import settings
 from schedules.models import Schedules
 
-# Create your models here.
 class Participants(models.Model):
     schedule = models.ForeignKey(
         Schedules,
@@ -16,5 +15,6 @@ class Participants(models.Model):
         default=None,
         # null=True,
         # blank=True
-
     )
+    is_host = models.BooleanField(default=False,blank=True)
+    

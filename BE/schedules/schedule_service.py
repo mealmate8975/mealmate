@@ -39,21 +39,19 @@ class ScheduleCommandService:
         schedule = get_object_or_404(Schedules, pk=pk, created_by=user)
         schedule.delete()
     
-    
 class ScheduleQueryService:
     @staticmethod
     def list_schedules(user):
         schedules = Schedules.objects.filter(created_by=user)
         return ScheduleSerializer(schedules, many=True).data
     
+    # @staticmethod
+    # def get_schedule(pk, user):
+    #     '''
 
-    @staticmethod
-    def get_schedule(pk, user):
-        '''
-
-        '''
-        schedule = get_object_or_404(Schedules, pk=pk, created_by=user)
-        return ScheduleSerializer(schedule).data   
+    #     '''
+    #     schedule = get_object_or_404(Schedules, pk=pk, created_by=user)
+    #     return ScheduleSerializer(schedule).data   
 
     @staticmethod
     def get_participant_user_ids(schedule_id,host): 
@@ -73,29 +71,29 @@ class ScheduleQueryService:
 
         return participant_id_list
 
-    # @staticmethod
-    # def get_related_schedule_ids_by_user_ids(pk, user):
-    #     '''
+    @staticmethod
+    def get_related_schedule_by_user_id(schedule_id,host):
+        '''
+        참가자들이 관련된 모든 스케줄 반환 
+        '''
 
-    #     '''
-    #     participant_id_list = ScheduleQueryService.get_participant_user_ids(pk, user)
+        participant_id_list = ScheduleQueryService.get_participant_user_ids(schedule_id,host)
 
-    #     # 스케줄 참여자로 스케줄 찾기
-    #     # (호스트의 id + 게스트들의 id)로 participants 테이블에서 스케줄 id 추출(중복제거)
-    #     schedule_id_queryset_from_Participants = Participants.objects.filter(
-    #         participant__in=participant_id_list
-    #     ).values_list("schedule", flat=True).distinct()
+        # 스케줄 참여자로 스케줄 찾기
+        schedule_id_queryset_from_Participants = Participants.objects.filter(
+            participant__in=participant_id_list
+        ).values_list("schedule", flat=True).distinct()
 
-    #     # 스케줄 생성자로 스케줄 찾기
-    #     # (호스트의 id + 게스트들의 id)로 schedules 테이블에서 생성자로 스케줄 id 추출
-    #     schedule_id_queryset_from_Schedules = Schedules.objects.filter(
-    #         created_by__in=participant_id_list
-    #     ).values_list("schedule_id", flat=True).distinct()
+        # 스케줄 생성자로 스케줄 찾기
+        # (호스트의 id + 게스트들의 id)로 schedules 테이블에서 생성자로 스케줄 id 추출
+        schedule_id_queryset_from_Schedules = Schedules.objects.filter(
+            created_by__in=participant_id_list
+        ).values_list("schedule_id", flat=True).distinct()
 
-    #     combined_schedule_ids = set(chain(schedule_id_queryset_from_Participants, schedule_id_queryset_from_Schedules))
-    #     # itertools.chain 객체이며, 단순한 lazy iterator
+        combined_schedule_ids = set(chain(schedule_id_queryset_from_Participants, schedule_id_queryset_from_Schedules))
+        # itertools.chain 객체이며, 단순한 lazy iterator
 
-    #     return combined_schedule_ids
+        return combined_schedule_ids
 
     @staticmethod
     def check_conflicting_schedule(schedule_id,new_schedule_start,new_schedule_end,host):
@@ -103,9 +101,10 @@ class ScheduleQueryService:
         새로운 스케줄과 겹치는 스케줄이 있는지 확인하는 메서드
         '''
         # 1. schedule_id로 약속의 참가자 모두 찾기
-        participant_id_list = ScheduleQueryService.get_participant_user_ids(schedule_id)
+        participant_id_list = ScheduleQueryService.get_participant_user_ids(schedule_id,host)
 
-        # 2. 호스트 + 참가자 로 관련된 약속 모두 찾기
+        # 2. participant_id_list로 관련된 약속 모두 찾기
+        
         
         # related_schedule_id_set = ScheduleQueryService.get_related_schedule_ids_by_user_ids(schedule_pk)
 
