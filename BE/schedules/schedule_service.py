@@ -45,34 +45,26 @@ class ScheduleQueryService:
         schedules = Schedules.objects.filter(created_by=user)
         return ScheduleSerializer(schedules, many=True).data
     
-    # @staticmethod
-    # def get_schedule(pk, user):
-    #     '''
-
-    #     '''
-    #     schedule = get_object_or_404(Schedules, pk=pk, created_by=user)
-    #     return ScheduleSerializer(schedule).data   
-
     @staticmethod
     def get_participant_id_list(schedule_id): 
         '''
-        약속 참가자들의 id 리스트를 반환
+        약속의 참가자들 쿼리셋 반환
         '''
         target_schedule = get_object_or_404(Schedules,pk=schedule_id)
 
-        participant_id_list = list(Participants.objects.filter(schedule=target_schedule).values_list("participant_id", flat=True).distinct())
+        participant_queryset= Participants.objects.filter(schedule=target_schedule).values_list("participant_id", flat=True).distinct()
         
-        return participant_id_list
+        return participant_queryset
 
     @staticmethod
-    def get_related_schedule_queryset(schedule_id,host):
+    def get_related_schedule_queryset(schedule_id):
         '''
         참가자들이 속해있는 모든 스케줄 쿼리셋 반환 
         '''
-        participant_id_list = ScheduleQueryService.get_participant_id_list(schedule_id)
+        participant_queryset = ScheduleQueryService.get_participant_id_list(schedule_id)
 
         schedule_id_queryset = Participants.objects.filter(
-            participant__in=participant_id_list
+            participant__in=participant_queryset
         ).values_list("schedule", flat=True).distinct()
 
         return schedule_id_queryset
@@ -80,19 +72,25 @@ class ScheduleQueryService:
     @staticmethod
     def check_conflicting_schedule(schedule_id,new_schedule_start,new_schedule_end,host):
         '''
-        새로운 스케줄과 겹치는 스케줄이 있는지 확인하는 메서드
+        새로운 스케줄과 겹치는 스케줄이 있는지 확인
         '''
-        # 1. schedule_id로 약속의 참가자 모두 찾기
-        participant_id_list = ScheduleQueryService.get_participant_user_ids(schedule_id,host)
+        schedule_id_queryset = ScheduleQueryService.get_related_schedule_queryset(schedule_id)
 
-        # 2. participant_id_list로 관련된 약속 모두 찾기
-        
-        
-        # related_schedule_id_set = ScheduleQueryService.get_related_schedule_ids_by_user_ids(schedule_pk)
+        # case1 포함 관계
+        # 1-1 기존 일정이 새 일정에 포함
+	    # 1-2 새 일정이 기존 일정에 포함
 
-        if True:
+        # case2 걸침 관계
+        # 2-1 기존 일정이 새 일정에 포함
+	    # 2-2 새 일정이 기존 일정에 포함
+
+        conflicting_schedules = Schedules.objects.filter(
+            Q(schedule_start__lt=new_schedule_end) & Q(schedule_end__gt=new_schedule_start)
+        )
+
+        if conflicting_schedules:
             return True
-        
+
         return False
 
 class ScheduleTimeService:
