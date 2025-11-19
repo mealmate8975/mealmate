@@ -61,32 +61,21 @@ class ScheduleQueryService:
         target_schedule = get_object_or_404(Schedules,pk=schedule_id)
 
         participant_id_list = list(Participants.objects.filter(schedule=target_schedule).values_list("participant_id", flat=True).distinct())
-
+        
         return participant_id_list
 
     @staticmethod
-    def get_related_schedule_by_user_id(schedule_id,host):
+    def get_related_schedule_queryset(schedule_id,host):
         '''
-        참가자들이 관련된 모든 스케줄 반환 
+        참가자들이 속해있는 모든 스케줄 쿼리셋 반환 
         '''
+        participant_id_list = ScheduleQueryService.get_participant_id_list(schedule_id)
 
-        participant_id_list = ScheduleQueryService.get_participant_user_ids(schedule_id,host)
-
-        # 관련된 스케줄 찾기
         schedule_id_queryset = Participants.objects.filter(
             participant__in=participant_id_list
         ).values_list("schedule", flat=True).distinct()
 
-        # 스케줄 생성자로 스케줄 찾기
-        # (호스트의 id + 게스트들의 id)로 schedules 테이블에서 생성자로 스케줄 id 추출
-        schedule_id_queryset_from_Schedules = Schedules.objects.filter(
-            created_by__in=participant_id_list
-        ).values_list("schedule_id", flat=True).distinct()
-
-        combined_schedule_ids = set(chain(schedule_id_queryset_from_Participants, schedule_id_queryset_from_Schedules))
-        # itertools.chain 객체이며, 단순한 lazy iterator
-
-        return combined_schedule_ids
+        return schedule_id_queryset
 
     @staticmethod
     def check_conflicting_schedule(schedule_id,new_schedule_start,new_schedule_end,host):
