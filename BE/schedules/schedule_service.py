@@ -70,28 +70,22 @@ class ScheduleQueryService:
         return schedule_id_queryset
 
     @staticmethod
-    def check_conflicting_schedule(schedule_id,new_schedule_start,new_schedule_end,host):
+    def check_conflicting_schedule(schedule_id,new_schedule_start,new_schedule_end):
         '''
-        새로운 스케줄과 겹치는 스케줄이 있는지 확인
+        새로운 스케줄 시간이
+        같은 참여자 그룹이 속해 있는 '다른' 스케줄들과 겹치는지 여부를 반환
+
+        반환:
+            True  -> 하나 이상 충돌하는 스케줄 있음
+            False -> 충돌 없음
         '''
         schedule_id_queryset = ScheduleQueryService.get_related_schedule_queryset(schedule_id)
 
-        # case1 포함 관계
-        # 1-1 기존 일정이 새 일정에 포함
-	    # 1-2 새 일정이 기존 일정에 포함
-
-        # case2 걸침 관계
-        # 2-1 기존 일정이 새 일정에 포함
-	    # 2-2 새 일정이 기존 일정에 포함
-
-        conflicting_schedules = Schedules.objects.filter(
+        conflicting_schedules = Schedules.objects.filter(schedule_id__in=schedule_id_queryset).exclude(schedule_id=schedule_id).filter(
             Q(schedule_start__lt=new_schedule_end) & Q(schedule_end__gt=new_schedule_start)
         )
 
-        if conflicting_schedules:
-            return True
-
-        return False
+        return conflicting_schedules.exists()
 
 class ScheduleTimeService:
     @staticmethod
