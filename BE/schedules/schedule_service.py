@@ -89,15 +89,21 @@ class ScheduleQueryService:
 
 class ScheduleTimeService:
     @staticmethod
-    def update_schedule_time_if_available(schedule_id,user,new_schedule_start,new_schedule_end):
+    def update_schedule_time_if_available(user,schedule_id,new_schedule_start,new_schedule_end):
         '''
-         0. 요청하는 사용자가 호스트인지 확인
-         1. 새로 설정할 시작/종료 시간의 유효성 검증
-         2. 새로운 약속 시간과 겹치는 기존 약속이 있는지 검사
+        스케줄 시간 업데이트
+
+         1. 요청하는 사용자가 해당 스케줄의 호스트인지 확인
+         2. 새로 설정할 시작/종료 시간의 유효성 검증
+         3. 새로운 약속 시간과 겹치는 기존 약속이 있는지 검사
         '''
-        # 0. 요청하는 사용자가 호스트인지 확인
-        target_schedule = get_object_or_404(Schedules,schedule_id= schedule_id)
-        if user != target_schedule.created_by:
+        # 1. 요청하는 사용자가 해당 스케줄의 호스트인지 확인
+        
+        if not Participants.objects.filter(
+            schedule=schedule_id,
+            participant=user,
+            is_host=True
+            ).exists():
             raise PermissionDenied("해당 약속의 호스트만 시간을 수정할 수 있습니다.")
 
         # 1. 새로 설정할 시작/종료 시간의 유효성 검증
